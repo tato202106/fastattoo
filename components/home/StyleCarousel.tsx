@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Picture } from "@/components/ui/Picture";
-import { artAsset } from "@/lib/store/demo";
+import { artAsset } from "@/lib/art/assets";
 import { STYLES } from "@/lib/styles";
 
 /** Cartes de styles scrollables horizontalement (SPEC §5). */

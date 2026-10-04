@@ -3,30 +3,15 @@
  * notifications). Construit relativement à la date du jour pour que le
  * dashboard reste vivant (« 2 rendez-vous aujourd'hui », etc.).
  */
-import { artSpec } from "../art/generate";
+import { artAsset, avatarAsset } from "../art/assets";
 import { DEMO_ARTIST_ID } from "../data/ids";
 import { addDays, todayISO } from "../dates";
-import type { ImageAsset, StyleSlug } from "../types";
+import type { ImageAsset } from "../types";
 import type { Appointment, AppNotification, Conversation, ProjectRequest } from "./model";
 
-export const CLIENT_ID = "client-me";
-export const DEMO_CLIENT_NAME = "Thomas";
-export { DEMO_ARTIST_ID };
+import { CLIENT_ID, DEMO_CLIENT_NAME } from "./ids";
 
-export function avatarAsset(n: number, name: string): ImageAsset {
-  const initials = name
-    .split(/\s+/)
-    .map((w) => w[0] ?? "")
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-  return { id: `avatar-${n}`, base: `/media/avatar/${n}/${encodeURIComponent(initials)}`, width: 400, height: 400, color: "#2d2a32", alt: name };
-}
-
-export function artAsset(style: StyleSlug, seed: number, alt: string): ImageAsset {
-  const s = artSpec(style, seed);
-  return { id: `${style}-${seed}`, base: `/media/art/${style}/${seed}`, width: s.width, height: s.height, color: s.background, alt };
-}
+export { artAsset, avatarAsset, CLIENT_ID, DEMO_ARTIST_ID, DEMO_CLIENT_NAME };
 
 export const DEMO_ARTISTS = {
   lea: { id: DEMO_ARTIST_ID, name: "Léa Ink", slug: "lea-ink", avatar: avatarAsset(1, "Léa Ink") },

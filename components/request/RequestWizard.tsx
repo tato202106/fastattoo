@@ -10,7 +10,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Picture } from "@/components/ui/Picture";
 import { formatShortDay, relativeDay } from "@/lib/dates";
 import { useApp } from "@/lib/store/app";
-import { artAsset } from "@/lib/store/demo";
+import { artAsset } from "@/lib/art/assets";
 import { useHydrated } from "@/lib/store/hydration";
 import { TATTOO_SIZES, type TattooSize } from "@/lib/store/model";
 import { BODY_ZONES, STYLES, styleLabel, zoneLabel } from "@/lib/styles";

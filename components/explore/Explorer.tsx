@@ -16,15 +16,17 @@ import { styleLabel } from "@/lib/styles";
 import type { ArtistCard as Card, BBox, SearchFilters, SearchResponse } from "@/lib/types";
 import type { ArtistMapHandle } from "./ArtistMap";
 import { CardCarousel } from "./CardCarousel";
-import { FiltersSheet } from "./FiltersSheet";
 import { MapBottomSheet, type Snap } from "./MapBottomSheet";
-import { SearchOverlay, type SearchAction } from "./SearchOverlay";
+import type { SearchAction } from "./SearchOverlay";
 
 /** La carte n'est chargée que sur cet écran, après le premier rendu (SPEC §27). */
 const ArtistMap = dynamic(() => import("./ArtistMap"), {
   ssr: false,
   loading: () => <div className="skeleton absolute inset-0" aria-label="Chargement de la carte" />,
 });
+
+const SearchOverlay = dynamic(() => import("./SearchOverlay").then((m) => m.SearchOverlay), { ssr: false });
+const FiltersSheet = dynamic(() => import("./FiltersSheet").then((m) => m.FiltersSheet), { ssr: false });
 
 const PAGE_SIZE = 12;
 const PEEK_HEIGHT = 252;
@@ -370,8 +372,8 @@ export function Explorer() {
             <Icon name="locate" size={22} />
           </button>
         </section>
-        <SearchOverlay open={searchOpen} initialQuery={q} onClose={closeSearch} onAction={onSearchAction} />
-        <FiltersSheet open={filtersOpen} onClose={() => setFiltersOpen(false)} value={filters} onApply={(f) => updateUrl({ filters: f })} context={filterContext} />
+        {searchOpen && <SearchOverlay open={searchOpen} initialQuery={q} onClose={closeSearch} onAction={onSearchAction} />}
+        {filtersOpen && <FiltersSheet open={filtersOpen} onClose={() => setFiltersOpen(false)} value={filters} onApply={(f) => updateUrl({ filters: f })} context={filterContext} />}
       </div>
     );
   }
@@ -434,8 +436,8 @@ export function Explorer() {
         </button>
       )}
 
-      <SearchOverlay open={searchOpen} initialQuery={q} onClose={closeSearch} onAction={onSearchAction} />
-      <FiltersSheet open={filtersOpen} onClose={() => setFiltersOpen(false)} value={filters} onApply={(f) => updateUrl({ filters: f })} context={filterContext} />
+      {searchOpen && <SearchOverlay open={searchOpen} initialQuery={q} onClose={closeSearch} onAction={onSearchAction} />}
+      {filtersOpen && <FiltersSheet open={filtersOpen} onClose={() => setFiltersOpen(false)} value={filters} onApply={(f) => updateUrl({ filters: f })} context={filterContext} />}
     </div>
   );
 }

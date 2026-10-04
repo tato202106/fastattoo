@@ -37,13 +37,27 @@ export const useLocation = create<LocationState>()((set) => ({
     }
     set({ status: "locating" });
     pending = new Promise<LatLng | null>((resolve) => {
+      // Le `timeout` de l'API ne démarre qu'après l'autorisation : si l'invite
+      // reste sans réponse, on débloque l'interface nous-mêmes.
+      let settled = false;
+      const safety = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        set({ status: "timeout" });
+        resolve(null);
+      }, 20_000);
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const position = roundLatLng({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          clearTimeout(safety);
+          settled = true;
           set({ position, status: "granted" });
           resolve(position);
         },
         (err) => {
+          clearTimeout(safety);
+          if (settled) return;
+          settled = true;
           set({ status: err.code === err.PERMISSION_DENIED ? "denied" : err.code === err.TIMEOUT ? "timeout" : err.code === err.POSITION_UNAVAILABLE ? "unavailable" : "error" });
           resolve(null);
         },

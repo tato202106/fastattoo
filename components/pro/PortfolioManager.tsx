@@ -7,7 +7,7 @@ import { buttonClass } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Picture } from "@/components/ui/Picture";
 import { useApp } from "@/lib/store/app";
-import { DEMO_ARTISTS } from "@/lib/store/demo";
+import { DEMO_ARTIST_SLUG } from "@/lib/store/ids";
 import { styleLabel } from "@/lib/styles";
 import type { Artist, PortfolioItem } from "@/lib/types";
 
@@ -19,7 +19,7 @@ export function PortfolioManager() {
   const mine = additions.filter((a) => a.artistId === session?.userId);
 
   useEffect(() => {
-    fetch(`/api/artists/${DEMO_ARTISTS.lea.slug}`)
+    fetch(`/api/artists/${DEMO_ARTIST_SLUG}`)
       .then((r) => r.json() as Promise<Artist>)
       .then((a) => setPublished(a.portfolio))
       .catch(() => setPublished([]));
@@ -30,7 +30,7 @@ export function PortfolioManager() {
       <PageHeader
         title="Portfolio"
         action={
-          <Link href="/tatoueurs/lea-ink" className="text-sm font-semibold text-accent">
+          <Link href={`/tatoueurs/${DEMO_ARTIST_SLUG}`} className="text-sm font-semibold text-accent">
             Voir mon profil
           </Link>
         }

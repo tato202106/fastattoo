@@ -15,7 +15,7 @@ import { addDays, diffDays, formatTime, relativeDay, todayISO } from "../dates";
 import { dispatchExternal } from "../notifications/channels";
 import { styleLabel, zoneLabel } from "../styles";
 import type { ImageAsset } from "../types";
-import { buildDemoState, CLIENT_ID, DEMO_CLIENT_NAME } from "./demo";
+import { CLIENT_ID, DEMO_CLIENT_NAME } from "./ids";
 import type {
   Appointment,
   AppNotification,
@@ -53,6 +53,8 @@ interface AppState {
   installDismissedAt: number | null;
   /** Dernière notification reçue pendant la session (affichée en toast). */
   toast: AppNotification | null;
+  /** Données de démo chargées (une seule fois, à la première visite). */
+  seeded: boolean;
 
   login(role: Role, name: string, email: string): void;
   logout(): void;
@@ -77,12 +79,21 @@ interface AppState {
   dismissToast(): void;
   dismissInstall(): void;
   ensureReminders(): void;
-  resetDemo(): void;
+  /** Charge les données de démo (module importé à la demande, hors du bundle initial). */
+  seedDemo(force?: boolean): Promise<void>;
+  resetDemo(): Promise<void>;
 }
 
-function demoData() {
-  const { requests, conversations, appointments, notifications } = buildDemoState();
-  return { requests, conversations, appointments, notifications, blocks: [] as CalendarBlock[], portfolioAdditions: [] as LocalPortfolioItem[], reviews: [] as LocalReview[] };
+function emptyData() {
+  return {
+    requests: [] as ProjectRequest[],
+    conversations: [] as Conversation[],
+    appointments: [] as Appointment[],
+    notifications: [] as AppNotification[],
+    blocks: [] as CalendarBlock[],
+    portfolioAdditions: [] as LocalPortfolioItem[],
+    reviews: [] as LocalReview[],
+  };
 }
 
 export const useApp = create<AppState>()(
@@ -128,10 +139,11 @@ export const useApp = create<AppState>()(
       return {
         session: null,
         favorites: [],
-        ...demoData(),
+        ...emptyData(),
         artistProfile: null,
         installDismissedAt: null,
         toast: null,
+        seeded: false,
 
         login(role, name, email) {
           const userId = role === "artist" ? DEMO_ARTIST_ID : CLIENT_ID;
@@ -350,8 +362,14 @@ export const useApp = create<AppState>()(
             set((s) => ({ notifications: [n, ...s.notifications] }));
           }
         },
-        resetDemo() {
-          set({ ...demoData(), toast: null });
+        async seedDemo(force = false) {
+          if (get().seeded && !force) return;
+          const { buildDemoState } = await import("./demo");
+          set({ ...emptyData(), ...buildDemoState(), seeded: true, toast: null });
+          get().ensureReminders();
+        },
+        async resetDemo() {
+          await get().seedDemo(true);
         },
       };
     },

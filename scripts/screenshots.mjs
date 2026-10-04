@@ -42,7 +42,7 @@ const SCREENS = [
   { name: "explorer", path: "/explorer?q=Nantes", wait: 2500 },
   { name: "explorer-list", path: "/explorer?q=Nantes", wait: 2500, action: async (p) => { await p.getByRole("button", { name: "Agrandir la liste" }).click(); await p.getByRole("button", { name: "Agrandir la liste" }).click(); await p.waitForTimeout(700); } },
   { name: "filters", path: "/explorer?q=Nantes", wait: 1500, action: async (p) => { await p.getByRole("button", { name: /Filtrer/ }).first().click(); await p.waitForTimeout(900); } },
-  { name: "search", path: "/", action: async (p) => { await p.getByRole("button", { name: /Rechercher/ }).first().click(); await p.keyboard.type("fine line nan"); await p.waitForTimeout(900); } },
+  { name: "search", path: "/", action: async (p) => { await p.getByRole("button", { name: /Rechercher/ }).first().click(); await p.waitForTimeout(400); await p.keyboard.type("fine line nan", { delay: 30 }); await p.waitForTimeout(900); } },
   { name: "profile", path: "/tatoueurs/lea-ink", wait: 1500 },
   { name: "profile-portfolio", path: "/tatoueurs/lea-ink", wait: 1500, action: async (p) => { await p.evaluate(() => window.scrollTo(0, 620)); await p.waitForTimeout(1200); } },
   { name: "lightbox", path: "/tatoueurs/lea-ink", wait: 1500, action: async (p) => { await p.getByRole("button", { name: /Agrandir/ }).first().click(); await p.waitForTimeout(1500); } },

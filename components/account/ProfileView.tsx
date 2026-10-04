@@ -11,6 +11,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { formatShortDay, formatTime, relativeDay } from "@/lib/dates";
 import { requestPushPermission } from "@/lib/notifications/channels";
 import { pastAppointments, upcomingAppointments, useApp } from "@/lib/store/app";
+import { DEMO_ARTIST_SLUG } from "@/lib/store/ids";
 import type { Appointment } from "@/lib/store/model";
 
 function Row({ icon, label, href, onClick, hint }: { icon: IconName; label: string; href?: string; onClick?: () => void; hint?: string }) {
@@ -105,7 +106,7 @@ export function ProfileView() {
             <Row icon="grid" label="Mon dashboard" href="/pro" />
             <Row icon="image" label="Mon portfolio" href="/pro/portfolio" />
             <Row icon="edit" label="Profil professionnel" href="/pro/onboarding" />
-            <Row icon="user" label="Voir mon profil public" href="/tatoueurs/lea-ink" />
+            <Row icon="user" label="Voir mon profil public" href={`/tatoueurs/${DEMO_ARTIST_SLUG}`} />
           </>
         ) : (
           <>
@@ -136,7 +137,7 @@ export function ProfileView() {
           icon="trash"
           label="Réinitialiser la démo"
           onClick={() => {
-            if (confirm("Remettre les données de démo à zéro ?")) resetDemo();
+            if (confirm("Remettre les données de démo à zéro ?")) void resetDemo();
           }}
         />
         <Row

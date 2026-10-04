@@ -13,7 +13,10 @@ import { useApp } from "@/lib/store/app";
  */
 export function AppRuntime() {
   useEffect(() => {
-    void Promise.resolve(useApp.persist.rehydrate()).then(() => useApp.getState().ensureReminders());
+    void Promise.resolve(useApp.persist.rehydrate()).then(async () => {
+      await useApp.getState().seedDemo();
+      useApp.getState().ensureReminders();
+    });
     registerChannel(browserPushChannel);
     listenForInstallPrompt();
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {

@@ -1,10 +1,9 @@
-import { ClientDashboard } from "@/components/client/ClientDashboard";
+import { ClientDashboard, InstallBanner } from "@/components/home/HomeDeferred";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { HomeHero } from "@/components/home/HomeHero";
 import { HomeSearch } from "@/components/home/HomeSearch";
 import { NearbyArtists } from "@/components/home/NearbyArtists";
 import { StyleCarousel } from "@/components/home/StyleCarousel";
-import { InstallBanner } from "@/components/pwa/InstallPrompt";
 import { artists } from "@/lib/data";
 
 export const revalidate = 3600;

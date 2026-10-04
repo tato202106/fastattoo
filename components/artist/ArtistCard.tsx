@@ -10,10 +10,10 @@ import { styleLabel } from "@/lib/styles";
 import type { ArtistCard as Card } from "@/lib/types";
 import { FavoriteButton } from "./FavoriteButton";
 
-export function ArtistMeta({ artist, className }: { artist: Card; className?: string }) {
+export function ArtistMeta({ artist, className, nowrap }: { artist: Card; className?: string; nowrap?: boolean }) {
   const distance = formatDistance(artist.distanceKm);
   return (
-    <p className={clsx("flex flex-wrap items-center gap-x-1.5 text-sm text-muted", className)}>
+    <p className={clsx("flex items-center gap-x-1.5 text-sm text-muted", nowrap ? "flex-nowrap overflow-hidden whitespace-nowrap" : "flex-wrap", className)}>
       <Rating value={artist.rating} className="text-fg" />
       <span aria-hidden>·</span>
       {distance ? <span>{distance}</span> : <span>{artist.city}</span>}
@@ -106,7 +106,7 @@ export function ArtistCompactCard({ artist, active }: { artist: Card; active?: b
             <span className="truncate">{artist.name}</span>
             {artist.verified && <Icon name="verified" size={16} className="shrink-0 text-accent" aria-label="Vérifiée" />}
           </h3>
-          <ArtistMeta artist={artist} className="flex-nowrap overflow-hidden whitespace-nowrap" />
+          <ArtistMeta artist={artist} nowrap />
           <p className="truncate text-sm text-fg/80">{artist.styles.map(styleLabel).join(" · ")}</p>
         </div>
         <FavoriteButton artistId={artist.id} name={artist.name} className="relative z-10 -mr-1 self-start" />

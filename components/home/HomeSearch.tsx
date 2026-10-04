@@ -1,8 +1,13 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import { SearchOverlay, type SearchAction } from "@/components/explore/SearchOverlay";
+import type { SearchAction } from "@/components/explore/SearchOverlay";
+
+/** Recherche plein écran chargée à la première ouverture (hors du bundle initial). */
+const SearchOverlay = dynamic(() => import("@/components/explore/SearchOverlay").then((m) => m.SearchOverlay), { ssr: false });
+const preloadSearch = () => void import("@/components/explore/SearchOverlay");
 import { Icon } from "@/components/ui/Icon";
 
 /** Grande barre de recherche + bouton « Autour de moi » (SPEC §5). */
@@ -25,7 +30,11 @@ export function HomeSearch() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        onMouseEnter={() => router.prefetch("/explorer")}
+        onPointerDown={preloadSearch}
+        onMouseEnter={() => {
+          preloadSearch();
+          router.prefetch("/explorer");
+        }}
         className="tap flex h-14 w-full items-center gap-3 rounded-2xl border border-border bg-surface px-4 text-left shadow-card"
         aria-label="Rechercher : ville, style ou tatoueur"
       >
@@ -40,7 +49,7 @@ export function HomeSearch() {
         <Icon name="locate" size={20} />
         Autour de moi
       </button>
-      <SearchOverlay open={open} onClose={close} onAction={onAction} />
+      {open && <SearchOverlay open={open} onClose={close} onAction={onAction} />}
     </div>
   );
 }

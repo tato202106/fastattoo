@@ -41,6 +41,6 @@ export class LocalDiskStorage implements FileStorage {
 
 let instance: FileStorage | null = null;
 export function storage(): FileStorage {
-  instance ??= new LocalDiskStorage(path.resolve(process.cwd(), process.env.UPLOAD_DIR || ".data/uploads"));
+  instance ??= new LocalDiskStorage(path.resolve(/*turbopackIgnore: true*/ process.cwd(), process.env.UPLOAD_DIR || ".data/uploads"));
   return instance;
 }
