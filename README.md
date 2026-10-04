@@ -33,8 +33,9 @@ Profil → « Passer en mode tatoueur·se / client » pour changer de côté ; �
 
 ## Déploiement (Vercel)
 
-Le projet se déploie sans configuration : Vercel détecte Next.js, `npm install` lance le `postinstall`
-(copie du worker MapLibre) puis `next build`.
+`vercel.json` fixe le framework (Next.js), les commandes et la région (Paris, `cdg1`) : le projet se
+déploie même si le projet Vercel a été créé sur un dépôt vide (préréglage « Other » sinon, qui ne
+publie que `public/` → 404). `npm install` lance le `postinstall` (copie du worker MapLibre) puis `next build`.
 
 - Chaque push sur une branche crée un **déploiement de preview** ; la **production** suit la branche
   par défaut (`main`) — fusionner la branche de travail dans `main` pour mettre à jour le site principal.
