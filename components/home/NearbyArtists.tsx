@@ -74,7 +74,7 @@ export function NearbyArtists({ initial }: { initial: Card[] }) {
       {geoError && <p className="mb-3 rounded-xl bg-surface-2 px-3 py-2 text-sm text-muted">{geoError}</p>}
 
       <div className="grid gap-3 md:grid-cols-2">
-        {loading ? [0, 1, 2].map((i) => <ArtistCardSkeleton key={i} />) : items.map((a, i) => <ArtistCard key={a.id} artist={a} priority={i === 0} />)}
+        {loading ? [0, 1, 2].map((i) => <ArtistCardSkeleton key={i} />) : items.map((a) => <ArtistCard key={a.id} artist={a} />)}
       </div>
 
       <ButtonLink href="/explorer" variant="outline" size="lg" className="mt-4 w-full">

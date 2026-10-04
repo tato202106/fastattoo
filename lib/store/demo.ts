@@ -107,7 +107,7 @@ export function buildDemoState(now = Date.now()): DemoState {
 
   const leaToday1: Appointment = {
     id: "ap1", artistId: lea.id, artistName: lea.name, artistSlug: lea.slug, clientId: CLIENT_ID, clientName: DEMO_CLIENT_NAME,
-    date: today, time: "14:00", durationH: 2, label: "Fine Line · Avant-bras", status: "confirmed", conversationId: "c-r1",
+    date: addDays(today, 1), time: "14:00", durationH: 2, label: "Fine Line · Avant-bras", status: "confirmed", conversationId: "c-r1",
   };
   const appointments: Appointment[] = [
     leaToday1,
@@ -117,7 +117,7 @@ export function buildDemoState(now = Date.now()): DemoState {
     },
     {
       id: "ap3", artistId: lea.id, artistName: lea.name, artistSlug: lea.slug, clientId: "client-antoine", clientName: "Antoine",
-      date: addDays(today, 2), time: "10:00", durationH: 3, label: "Floral · Dos", status: "confirmed",
+      date: today, time: "11:00", durationH: 2, label: "Floral · Dos", status: "confirmed",
     },
     {
       id: "ap4", artistId: yanis.id, artistName: yanis.name, artistSlug: yanis.slug, clientId: CLIENT_ID, clientName: DEMO_CLIENT_NAME,
@@ -132,9 +132,9 @@ export function buildDemoState(now = Date.now()): DemoState {
       { id: "m3", from: "artist", at: now - 9 * d + 3 * h + 2 * min, kind: "reference", image: artAsset("fine-line", 104, "Branche fine line"), text: "Un peu dans cet esprit ?" },
       { id: "m4", from: "client", at: now - 8 * d, kind: "text", text: "Oui exactement, avec des feuilles un peu plus longues." },
       { id: "m5", from: "artist", at: now - 8 * d + h, kind: "price", amount: 240, label: "Pièce fine line, avant-bras, ~2 h" },
-      { id: "m6", from: "artist", at: now - 8 * d + h + min, kind: "proposal", proposal: { date: today, time: "14:00", durationH: 2, status: "accepted", appointmentId: "ap1" } },
+      { id: "m6", from: "artist", at: now - 8 * d + h + min, kind: "proposal", proposal: { date: addDays(today, 1), time: "14:00", durationH: 2, status: "accepted", appointmentId: "ap1" } },
       { id: "m7", from: "system", at: now - 8 * d + 2 * h, kind: "text", text: "Rendez-vous confirmé" },
-      { id: "m8", from: "artist", at: now - 3 * h, kind: "text", text: "À tout à l'heure ! Pense à bien t'hydrater et à manger avant la séance 🙂" },
+      { id: "m8", from: "artist", at: now - 3 * h, kind: "text", text: "À demain ! Pense à bien t'hydrater et à manger avant la séance 🙂" },
     ], { client: 1, artist: 0 }),
     conv("c-r2", sofia, CLIENT_ID, DEMO_CLIENT_NAME, "r2", [
       { id: "m1", from: "client", at: now - 2 * d, kind: "request", requestId: "r2" },
@@ -163,9 +163,9 @@ export function buildDemoState(now = Date.now()): DemoState {
   ];
 
   const notifications: AppNotification[] = [
-    { id: "n1", audience: "client", recipientId: CLIENT_ID, title: "Léa a répondu à votre demande.", body: "À tout à l'heure ! Pense à bien t'hydrater…", href: "/messages/c-r1", at: now - 3 * h, read: false },
+    { id: "n1", audience: "client", recipientId: CLIENT_ID, title: "Léa a répondu à votre demande.", body: "À demain ! Pense à bien t'hydrater…", href: "/messages/c-r1", at: now - 3 * h, read: false },
     { id: "n2", audience: "client", recipientId: CLIENT_ID, title: "Sofia vous propose un créneau.", body: "Rendez-vous proposé dans 4 jours à 17h", href: "/messages/c-r2", at: now - 1 * d, read: false },
-    { id: "n3", audience: "client", recipientId: CLIENT_ID, title: "Votre rendez-vous est confirmé.", body: "Léa Ink · aujourd'hui à 14h", href: "/messages/c-r1", at: now - 8 * d, read: true },
+    { id: "n3", audience: "client", recipientId: CLIENT_ID, title: "Votre rendez-vous est confirmé.", body: "Léa Ink · demain à 14h", href: "/messages/c-r1", at: now - 8 * d, read: true },
     { id: "n4", audience: "artist", recipientId: lea.id, title: "Nouvelle demande de Camille", body: "Bouquet de pivoines sur l'épaule", href: "/pro/demandes/r4", at: now - 2 * h, read: false },
     { id: "n5", audience: "artist", recipientId: lea.id, title: "Nouveau message de Julie", body: "Et si possible un rendez-vous un samedi", href: "/messages/c-r8", at: now - 38 * min, read: false },
     { id: "n6", audience: "artist", recipientId: lea.id, title: "Nouvelle demande de Hugo", body: "Une petite vague minimaliste sur la cheville", href: "/pro/demandes/r5", at: now - 5 * h, read: true },

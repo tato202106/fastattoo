@@ -10,7 +10,7 @@ export function StyleCarousel() {
       {STYLES.map((s, i) => (
         <li key={s.slug} className="w-[38%] shrink-0 snap-start sm:w-[28%] lg:w-auto">
           <Link href={`/explorer?styles=${s.slug}`} className="tap group relative block aspect-[3/4] overflow-hidden rounded-2xl">
-            <Picture image={artAsset(s.slug, 9000 + i * 7, `Style ${s.label}`)} usage="list" fill sizes="(min-width: 1024px) 220px, 40vw" />
+            <Picture image={artAsset(s.slug, 9000 + i * 7, `Style ${s.label}`)} usage="list" fill sizes="(min-width: 1024px) 220px, 40vw" priority={i < 2} />
             <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
             <span className="absolute inset-x-3 bottom-3 text-white">
               <span className="block text-[15px] leading-tight font-semibold">{s.label}</span>

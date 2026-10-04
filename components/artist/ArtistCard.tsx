@@ -10,15 +10,19 @@ import { styleLabel } from "@/lib/styles";
 import type { ArtistCard as Card } from "@/lib/types";
 import { FavoriteButton } from "./FavoriteButton";
 
-export function ArtistMeta({ artist, className, nowrap }: { artist: Card; className?: string; nowrap?: boolean }) {
+export function ArtistMeta({ artist, className, nowrap, hidePrice }: { artist: Card; className?: string; nowrap?: boolean; hidePrice?: boolean }) {
   const distance = formatDistance(artist.distanceKm);
   return (
     <p className={clsx("flex items-center gap-x-1.5 text-sm text-muted", nowrap ? "flex-nowrap overflow-hidden whitespace-nowrap" : "flex-wrap", className)}>
       <Rating value={artist.rating} className="text-fg" />
       <span aria-hidden>·</span>
       {distance ? <span>{distance}</span> : <span>{artist.city}</span>}
-      <span aria-hidden>·</span>
-      <span>dès {artist.priceFrom} €</span>
+      {!hidePrice && (
+        <>
+          <span aria-hidden>·</span>
+          <span>dès {artist.priceFrom} €</span>
+        </>
+      )}
     </p>
   );
 }
@@ -34,13 +38,17 @@ export function ArtistCard({
   onPick,
   onHover,
   priority,
+  headingLevel = 3,
 }: {
   artist: Card;
   selected?: boolean;
   onPick?: () => void;
   onHover?: () => void;
   priority?: boolean;
+  /** Niveau du titre selon la page (h2 sur l'écran Carte, h3 sous une section). */
+  headingLevel?: 2 | 3;
 }) {
+  const H = headingLevel === 2 ? "h2" : "h3";
   return (
     <article
       className={clsx(
@@ -53,7 +61,7 @@ export function ArtistCard({
       <div className="flex items-center gap-3">
         <Avatar image={artist.avatar} size={48} />
         <div className="min-w-0 flex-1">
-          <h3 className="flex items-center gap-1 truncate text-[17px] font-semibold">
+          <H className="flex items-center gap-1 truncate text-[17px] font-semibold">
             {onPick ? (
               <button type="button" onClick={onPick} className="truncate text-left after:absolute after:inset-0 after:content-['']" aria-label={`${artist.name} : centrer sur la carte`}>
                 {artist.name}
@@ -64,7 +72,7 @@ export function ArtistCard({
               </Link>
             )}
             {artist.verified && <Icon name="verified" size={16} className="shrink-0 text-accent" aria-label="Vérifié" />}
-          </h3>
+          </H>
           <ArtistMeta artist={artist} />
         </div>
         {onPick ? (
@@ -102,12 +110,14 @@ export function ArtistCompactCard({ artist, active }: { artist: Card; active?: b
       <div className="flex items-center gap-3">
         <Avatar image={artist.avatar} size={52} />
         <div className="min-w-0 flex-1">
-          <h3 className="flex items-center gap-1 text-[17px] font-semibold">
+          <h2 className="flex items-center gap-1 text-[17px] font-semibold">
             <span className="truncate">{artist.name}</span>
             {artist.verified && <Icon name="verified" size={16} className="shrink-0 text-accent" aria-label="Vérifiée" />}
-          </h3>
-          <ArtistMeta artist={artist} nowrap />
-          <p className="truncate text-sm text-fg/80">{artist.styles.map(styleLabel).join(" · ")}</p>
+          </h2>
+          <ArtistMeta artist={artist} nowrap hidePrice />
+          <p className="truncate text-sm text-fg/80">
+            {artist.styles.map(styleLabel).join(" · ")} · dès {artist.priceFrom} €
+          </p>
         </div>
         <FavoriteButton artistId={artist.id} name={artist.name} className="relative z-10 -mr-1 self-start" />
       </div>

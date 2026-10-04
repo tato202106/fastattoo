@@ -97,9 +97,9 @@ export function RequestDetail({ id }: { id: string }) {
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 px-4 pt-3 pb-[calc(12px+var(--safe-bottom))] backdrop-blur-md lg:bottom-auto lg:static lg:mt-6 lg:border-0 lg:bg-transparent">
-        <div className="mx-auto grid max-w-xl grid-cols-2 gap-2">
+        <div className="mx-auto grid max-w-xl grid-cols-[auto_1fr] gap-2">
           {r.status === "new" ? (
-            <Button variant="outline" size="lg" onClick={() => accept(r.id)}>
+            <Button variant="outline" size="lg" className="px-4" onClick={() => accept(r.id)}>
               <Icon name="check" size={20} /> Accepter
             </Button>
           ) : (
@@ -108,8 +108,8 @@ export function RequestDetail({ id }: { id: string }) {
             </Link>
           )}
           {open ? (
-            <Button size="lg" onClick={() => setSlotOpen(true)}>
-              <Icon name="calendar" size={20} /> Proposer un créneau
+            <Button size="lg" className="min-w-0 px-3 text-[15px]" onClick={() => setSlotOpen(true)}>
+              Proposer un créneau
             </Button>
           ) : (
             <Link href="/pro/calendrier" className="tap inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-fg font-semibold text-bg">

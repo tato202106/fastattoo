@@ -201,7 +201,7 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
         <div className="mx-auto flex max-w-xl items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{a.name}</p>
-            <p className="truncate text-xs text-muted">dès {a.priceFrom} € · ★ {a.rating.toFixed(1).replace(".", ",")}</p>
+            <p className="truncate text-xs text-muted">dès {a.priceFrom} €</p>
           </div>
           <Link href={requestHref} className={buttonClass("primary", "lg", "flex-[1.4]")}>
             Demander un projet

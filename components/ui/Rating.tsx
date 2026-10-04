@@ -14,7 +14,7 @@ export function Rating({ value, count, className, size = 14 }: { value: number; 
 
 export function Stars({ value, size = 14 }: { value: number; size?: number }) {
   return (
-    <span className="inline-flex" aria-label={`${value} sur 5`}>
+    <span className="inline-flex" role="img" aria-label={`${value} sur 5`}>
       {[1, 2, 3, 4, 5].map((i) => (
         <Icon key={i} name="star" size={size} strokeWidth={1.5} className={i <= Math.round(value) ? "text-star" : "text-border"} />
       ))}

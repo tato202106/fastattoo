@@ -65,6 +65,7 @@ export function Explorer() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
+  const [mapAllowed, setMapAllowed] = useState(false);
   const mapRef = useRef<ArtistMapHandle>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const trigger = useRef<Trigger>("query");
@@ -89,6 +90,14 @@ export function Explorer() {
     p.delete("autour");
     router.replace(p.size ? `${pathname}?${p}` : pathname, { scroll: false });
   }, [wantsNearby, params, pathname, router, requestPosition]);
+
+  // La carte (MapLibre, bundle lourd) démarre une fois la liste affichée et le
+  // navigateur disponible : les résultats apparaissent sans attendre la carte.
+  useEffect(() => {
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+    if (w.requestIdleCallback) w.requestIdleCallback(() => setMapAllowed(true), { timeout: 1200 });
+    else setTimeout(() => setMapAllowed(true), 300);
+  }, []);
 
   /* ---------- Recherche ---------- */
   useEffect(() => {
@@ -312,7 +321,7 @@ export function Explorer() {
         </div>
       )}
       {items.map((a, i) => (
-        <ArtistCard key={a.id} artist={a} selected={a.id === selectedId} priority={i < 2} onPick={() => onCardPick(a.id)} onHover={isDesktop ? () => setSelectedId(a.id) : undefined} />
+        <ArtistCard key={a.id} artist={a} headingLevel={2} selected={a.id === selectedId} priority={i < 2} onPick={() => onCardPick(a.id)} onHover={isDesktop ? () => setSelectedId(a.id) : undefined} />
       ))}
       {loadingMore && <ArtistCardSkeleton />}
       <div ref={sentinelRef} aria-hidden className="h-1" />
@@ -321,7 +330,9 @@ export function Explorer() {
 
   const mapLayer = (
     <>
-      {mapFailed ? (
+      {!mapAllowed ? (
+        <div className="skeleton absolute inset-0" aria-label="Chargement de la carte" />
+      ) : mapFailed ? (
         <div className="absolute inset-0 flex items-center justify-center bg-surface-2 p-8 text-center text-sm text-muted">La carte ne peut pas s&apos;afficher sur cet appareil. La liste reste disponible.</div>
       ) : (
         <ArtistMap

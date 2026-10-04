@@ -1,7 +1,4 @@
-"use client";
-
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
 import { defaultSize, imageUrl, srcSet, type ImageUsage } from "@/lib/images";
 import type { ImageAsset } from "@/lib/types";
 
@@ -9,6 +6,9 @@ import type { ImageAsset } from "@/lib/types";
  * Image responsive : AVIF + WebP via <picture>, variante choisie selon l'usage
  * (liste → thumbnail, profil → medium, plein écran → large), lazy loading,
  * dimensions fixes (pas de layout shift) et couleur dominante en placeholder.
+ *
+ * Pas de fondu piloté par JS : l'image s'affiche dès qu'elle est décodée,
+ * même avant l'hydratation (sinon le LCP attendrait le JavaScript).
  */
 export function Picture({
   image,
@@ -25,6 +25,7 @@ export function Picture({
   usage: ImageUsage;
   /** Attribut sizes ; par défaut calculé selon l'usage. */
   sizes?: string;
+  /** Image principale de l'écran (LCP) : chargement immédiat et prioritaire. */
   priority?: boolean;
   className?: string;
   imgClassName?: string;
@@ -33,14 +34,7 @@ export function Picture({
   alt?: string;
   draggable?: boolean;
 }) {
-  const [loaded, setLoaded] = useState(false);
-  const ref = useRef<HTMLImageElement>(null);
   const sizesAttr = sizes ?? DEFAULT_SIZES[usage];
-
-  useEffect(() => {
-    if (ref.current?.complete && ref.current.naturalWidth > 0) setLoaded(true);
-  }, []);
-
   return (
     <picture
       className={clsx("block overflow-hidden", fill && "absolute inset-0", className)}
@@ -49,7 +43,6 @@ export function Picture({
       <source type="image/avif" srcSet={srcSet(image, usage, "avif")} sizes={sizesAttr} />
       <source type="image/webp" srcSet={srcSet(image, usage, "webp")} sizes={sizesAttr} />
       <img
-        ref={ref}
         src={imageUrl(image, defaultSize(usage), "webp")}
         width={image.width}
         height={image.height}
@@ -58,12 +51,7 @@ export function Picture({
         decoding="async"
         fetchPriority={priority ? "high" : "auto"}
         draggable={draggable}
-        onLoad={() => setLoaded(true)}
-        className={clsx(
-          "h-full w-full object-cover transition-opacity duration-300",
-          loaded || priority ? "opacity-100" : "opacity-0",
-          imgClassName,
-        )}
+        className={clsx("h-full w-full object-cover", imgClassName)}
       />
     </picture>
   );
