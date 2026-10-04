@@ -4,6 +4,7 @@
   "private": true,
   "description": "Marketplace mobile-first qui met en relation clients et tatoueurs.",
   "scripts": {
+    "postinstall": "node scripts/copy-maplibre-worker.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

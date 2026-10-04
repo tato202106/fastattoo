@@ -1,3 +1,4 @@
+// Planche d'aperçu des visuels générés : npx tsx scripts/preview-art.mts sortie.png
 import sharp from "sharp";
 import { generateArtSvg, generateAvatarSvg } from "../lib/art/generate";
 const styles = ["fine-line","floral","blackwork","dotwork","geometrique","minimaliste","realisme","japonais","old-school","aquarelle"] as const;

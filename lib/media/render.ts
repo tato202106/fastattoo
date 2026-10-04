@@ -24,7 +24,9 @@ class Lru<V> {
 
 export const variantCache = new Lru<Buffer>(400);
 
-export function encode(pipeline: sharp.Sharp, format: ImageFormat): Promise<Buffer> {
+type Pipeline = ReturnType<typeof sharp>;
+
+export function encode(pipeline: Pipeline, format: ImageFormat): Promise<Buffer> {
   return format === "avif"
     ? pipeline.avif({ quality: IMAGE_QUALITY.avif, effort: 2 }).toBuffer()
     : pipeline.webp({ quality: IMAGE_QUALITY.webp, effort: 4 }).toBuffer();

@@ -52,7 +52,7 @@ const SEEDS: ArtistSeed[] = [
   { name: "Paul Dot", title: "Tatoueur", city: "toulouse", studio: "Pointillé", street: "rue des Filatiers", styles: ["dotwork", "geometrique"], priceFrom: 120, bio: "Dotwork géométrique, du petit symbole à la manchette complète." },
   { name: "Camille Rose", title: "Tatoueuse", city: "toulouse", studio: "Rose Brique", street: "rue Pargaminières", styles: ["floral", "fine-line"], priceFrom: 100, bio: "Roses, pivoines et lignes fines. Dessins sur mesure." },
   { name: "Enzo Koi", title: "Tatoueur", city: "toulouse", studio: "Koi Garden", street: "rue du Taur", styles: ["japonais", "realisme"], priceFrom: 190, bio: "Japonais et réalisme : je mélange les deux pour des pièces fortes." },
-  { name: "Sarah Minimal", title: "Tatoueuse", city: "nantes", studio: "Blanc Studio", street: "rue Crébillon", styles: ["minimaliste", "geometrique"], priceFrom: 80, bio: "Épuré, précis, discret. Le moins, mais le mieux." },
+  { name: "Sarah Minimal", title: "Tatoueuse", city: "nantes", studio: "Blanc Studio", street: "rue Crébillon", styles: ["minimaliste", "fine-line", "geometrique"], priceFrom: 80, bio: "Épuré, précis, discret. Le moins, mais le mieux." },
   { name: "Victor Old", title: "Tatoueur", city: "nantes", studio: "Le Navire", street: "boulevard Guist'hau", styles: ["old-school", "blackwork"], priceFrom: 110, bio: "Old school et blackwork, flashs maison toutes les semaines." },
 ];
 
@@ -195,5 +195,4 @@ export function getSeedArtists(): Artist[] {
   return cache.artists;
 }
 
-/** Identifiant du compte tatoueur de démo (Léa Ink). */
-export const DEMO_ARTIST_ID = "a001";
+export { DEMO_ARTIST_ID } from "./ids";
