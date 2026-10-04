@@ -31,6 +31,16 @@ Il n'y a pas encore de backend utilisateur : la connexion (`/connexion`) ne dema
 
 Profil → « Passer en mode tatoueur·se / client » pour changer de côté ; « Réinitialiser la démo » remet les données à zéro.
 
+## Déploiement (Vercel)
+
+Le projet se déploie sans configuration : Vercel détecte Next.js, `npm install` lance le `postinstall`
+(copie du worker MapLibre) puis `next build`.
+
+- Chaque push sur une branche crée un **déploiement de preview** ; la **production** suit la branche
+  par défaut (`main`) — fusionner la branche de travail dans `main` pour mettre à jour le site principal.
+- Les photos uploadées sont écrites dans le dossier temporaire de la fonction (non persistant) :
+  brancher Vercel Blob / S3 via l'interface `FileStorage` avant une vraie mise en production.
+
 ## Scripts
 
 | Commande | Rôle |

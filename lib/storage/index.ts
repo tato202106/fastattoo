@@ -1,4 +1,5 @@
 import { promises as fs } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 /**
@@ -39,8 +40,20 @@ export class LocalDiskStorage implements FileStorage {
   }
 }
 
+/**
+ * Dossier de stockage. Sur Vercel (et autres hébergements serverless), seul le
+ * dossier temporaire est accessible en écriture : les fichiers y sont perdus au
+ * redémarrage de la fonction. En production, brancher un stockage objet
+ * (Vercel Blob, S3, R2…) qui implémente FileStorage.
+ */
+function uploadRoot(): string {
+  if (process.env.UPLOAD_DIR) return path.resolve(/*turbopackIgnore: true*/ process.cwd(), process.env.UPLOAD_DIR);
+  if (process.env.VERCEL) return path.join(os.tmpdir(), "fastattoo-uploads");
+  return path.resolve(/*turbopackIgnore: true*/ process.cwd(), ".data/uploads");
+}
+
 let instance: FileStorage | null = null;
 export function storage(): FileStorage {
-  instance ??= new LocalDiskStorage(path.resolve(/*turbopackIgnore: true*/ process.cwd(), process.env.UPLOAD_DIR || ".data/uploads"));
+  instance ??= new LocalDiskStorage(uploadRoot());
   return instance;
 }
