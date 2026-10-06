@@ -1,7 +1,10 @@
 import { MemoryArtistRepository } from "./memory";
+import { NeonArtistRepository } from "./neon";
 import type { ArtistRepository } from "./repository";
 
-/** Point d'entrée unique : remplacer ici par l'implémentation base de données. */
-export const artists: ArtistRepository = new MemoryArtistRepository();
+/** Si DATABASE_URL existe, on utilise Neon. Sinon, les données de démo en mémoire. */
+export const artists: ArtistRepository = process.env.DATABASE_URL
+  ? new NeonArtistRepository()
+  : new MemoryArtistRepository();
 
 export type { ArtistRepository };

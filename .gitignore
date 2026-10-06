@@ -11,3 +11,5 @@ screenshots/
 .DS_Store
 public/vendor/
 lib/maplibre-version.ts
+.env
+._*
