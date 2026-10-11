@@ -39,6 +39,11 @@ export function DesktopNav() {
             );
           })}
         </nav>
+        {hydrated && role !== "artist" && (
+          <Link href="/devenir-tatoueur" className="flex h-10 items-center rounded-full px-4 text-sm font-semibold text-accent hover:bg-surface-2">
+            Tu es tatoueur ?
+          </Link>
+        )}
         <Link href="/notifications" aria-label="Notifications" className="relative inline-flex size-10 items-center justify-center rounded-full hover:bg-surface-2">
           <Icon name="bell" size={20} />
           {badges.notifications > 0 && <span className="absolute top-1.5 right-1.5 size-2.5 rounded-full bg-accent" />}
