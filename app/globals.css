@@ -5,15 +5,15 @@
  * Mobile d'abord : tailles et espacements pensés pour 375–430 px.
  */
 :root {
-  --bg: #f8f6f2;
+  --bg: #ffffff;
   --surface: #ffffff;
-  --surface-2: #f1eee8;
+  --surface-2: #fdf1f1;
   --fg: #151413;
   --muted: #6d6862;
-  --border: #e6e1d9;
-  --accent: #bf3b1f;
+  --border: #f0e2e2;
+  --accent: #d61f26;
   --accent-fg: #ffffff;
-  --accent-soft: #fbe7e1;
+  --accent-soft: #fde3e3;
   --success: #217048;
   --warning: #94600f;
   --star: #e8a33d;
@@ -26,25 +26,7 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f0e0d;
-    --surface: #1a1917;
-    --surface-2: #24221f;
-    --fg: #f3f0eb;
-    --muted: #a39d95;
-    --border: #2e2b28;
-    --accent: #f0694a;
-    --accent-fg: #160b08;
-    --accent-soft: #3a1d15;
-    --success: #4cbf7e;
-    --warning: #e0a548;
-    --star: #f0b453;
-    --overlay: rgb(0 0 0 / 0.6);
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.45);
-    color-scheme: dark;
-  }
-}
+
 
 @theme inline {
   --color-bg: var(--bg);
