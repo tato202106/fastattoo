@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DemoBadge } from "@/components/artist/ArtistCard";
 import { FavoriteButton } from "@/components/artist/FavoriteButton";
 import { MiniMap } from "@/components/artist/MiniMap";
 import { PortfolioGallery } from "@/components/artist/PortfolioGallery";
@@ -15,6 +16,7 @@ import { Rating } from "@/components/ui/Rating";
 import { artists } from "@/lib/data";
 import { formatTime, relativeDay } from "@/lib/dates";
 import { toCard } from "@/lib/search/engine";
+import { DEMO_PROFILES } from "@/lib/showcase";
 import { styleLabel } from "@/lib/styles";
 
 export const revalidate = 3600;
@@ -27,10 +29,14 @@ export async function generateMetadata({ params }: PageProps<"/tatoueurs/[slug]"
   const { slug } = await params;
   const a = await artists.getBySlug(slug);
   if (!a) return {};
-  const description = `${a.title} à ${a.city} · ${a.styles.map(styleLabel).join(", ")} · ★ ${a.rating} (${a.reviewCount} avis) · dès ${a.priceFrom} €`;
+  const description = DEMO_PROFILES
+    ? `Profil exemple Fastattoo · ${a.styles.map(styleLabel).join(", ")} · ${a.city}`
+    : `${a.title} à ${a.city} · ${a.styles.map(styleLabel).join(", ")} · ★ ${a.rating} (${a.reviewCount} avis) · dès ${a.priceFrom} €`;
   return {
     title: `${a.name}, ${a.title.toLowerCase()} à ${a.city}`,
     description,
+    // Les profils d'exemple ne doivent pas apparaître dans Google.
+    ...(DEMO_PROFILES ? { robots: { index: false, follow: true } } : {}),
     openGraph: { title: a.name, description, images: [{ url: `${a.cover.base}/large.webp`, width: 1600 }] },
   };
 }
@@ -65,7 +71,16 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
           </p>
         </div>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[15px]">
+      {DEMO_PROFILES && (
+        <div className="mt-3 rounded-2xl bg-surface-2 p-3 text-sm">
+          <DemoBadge className="bg-surface" />
+          <p className="mt-1.5 text-muted">
+            Ce profil est un exemple pour montrer comment fonctionne Fastattoo. Ce n&apos;est pas un vrai tatoueur : les demandes envoyées ici ne
+            sont transmises à personne.
+          </p>
+        </div>
+      )}
+      <div className={DEMO_PROFILES ? "hidden" : "mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[15px]"}>
         <a href="#avis" className="inline-flex items-center gap-1">
           <Rating value={a.rating} size={16} />
           <span className="text-muted">· {a.reviewCount} avis</span>
@@ -78,7 +93,7 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
         <Tag>dès {a.priceFrom} €</Tag>
-        {a.nextSlots[0] && (
+        {a.nextSlots[0] && !DEMO_PROFILES && (
           <Tag className="bg-success/12 text-success">
             Dispo {relativeDay(a.nextSlots[0].date).toLowerCase()} à {formatTime(a.nextSlots[0].time)}
           </Tag>
@@ -136,6 +151,7 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
         <p className="mt-2 text-sm text-muted">Le prix final dépend de la taille, de l&apos;emplacement et du niveau de détail.</p>
       </Section>
 
+      {!DEMO_PROFILES && (
       <Section title="Disponibilités" id="dispos">
         {slotsByDay.length ? (
           <ul className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 lg:mx-0 lg:flex-wrap lg:px-0">
@@ -152,7 +168,9 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
           <p className="text-sm text-muted">Pas de créneau libre ce mois-ci. Envoie quand même ta demande !</p>
         )}
       </Section>
+      )}
 
+      {!DEMO_PROFILES && (
       <Section title={`Avis (${a.reviewCount})`} id="avis">
         <div className="mb-4 flex items-center gap-3">
           <span className="text-4xl font-bold">{a.rating.toFixed(1).replace(".", ",")}</span>
@@ -163,6 +181,7 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
         </div>
         <ReviewsList artistId={a.id} reviews={a.reviews} />
       </Section>
+      )}
     </div>
   );
 
