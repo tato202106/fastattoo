@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { parseSignup } from "@/lib/signup";
+import { notifySignup } from "@/lib/signup-notify";
 
 /**
  * Enregistre une demande d'inscription tatoueur dans Neon (table artist_signups,
@@ -38,5 +39,6 @@ export async function POST(req: Request) {
   } catch {
     return Response.json({ error: "Impossible d'enregistrer ton inscription. Réessaie dans un instant." }, { status: 500 });
   }
+  await notifySignup(s);
   return Response.json({ ok: true });
 }
