@@ -6,7 +6,7 @@ export const PRO_PRICE_MONTHLY = 19;
 export const PRO_FREE_MONTHS = 3;
 
 /**
- * Lien du formulaire d'inscription (Google Forms, Tally…).
+ * Lien du formulaire d'inscription (formulaire du site, ou un lien externe).
  * Tant qu'il est vide, le bouton affiche « Inscriptions bientôt ouvertes ».
  */
-export const PRO_SIGNUP_URL = "";
+export const PRO_SIGNUP_URL = "/devenir-tatoueur/inscription";

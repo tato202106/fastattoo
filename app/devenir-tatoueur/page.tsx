@@ -30,6 +30,13 @@ function SignupButton({ className }: { className?: string }) {
       </span>
     );
   }
+  if (PRO_SIGNUP_URL.startsWith("/")) {
+    return (
+      <Link href={PRO_SIGNUP_URL} className={buttonClass("primary", "lg", className)}>
+        Je m&apos;inscris
+      </Link>
+    );
+  }
   return (
     <a href={PRO_SIGNUP_URL} target="_blank" rel="noopener" className={buttonClass("primary", "lg", className)}>
       Je m&apos;inscris
