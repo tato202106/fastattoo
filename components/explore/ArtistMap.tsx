@@ -145,8 +145,20 @@ export default function ArtistMap({
       if (userMoving) callbacks.current.onUserMove?.();
       userMoving = false;
     });
-    map.on("load", () => setReady(true));
+    let styleLoaded = false;
+    let usingFallback = !process.env.NEXT_PUBLIC_MAP_STYLE_URL;
+    map.on("load", () => {
+      styleLoaded = true;
+      setReady(true);
+    });
     map.on("error", (e) => {
+      // Style personnalisé injoignable (clé MapTiler refusée, URL erronée…) : on repasse
+      // sur le fond gratuit par défaut plutôt que d'afficher une carte blanche.
+      if (!styleLoaded && !usingFallback) {
+        usingFallback = true;
+        map.setStyle(defaultStyle(dark));
+        return;
+      }
       // Les erreurs de tuiles (réseau) ne sont pas bloquantes ; seules les erreurs WebGL le sont.
       if (String(e.error?.message ?? "").toLowerCase().includes("webgl")) callbacks.current.onError?.();
     });
