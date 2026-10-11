@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Footer } from "@/components/legal/Footer";
 import { buttonClass } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { PRO_FREE_MONTHS, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL } from "@/lib/pro-offer";
@@ -114,6 +115,7 @@ export default function BecomeArtistPage() {
       </section>
 
       <p className="mt-6 text-center text-sm text-muted">Une question ? Pose-la directement dans le formulaire d&apos;inscription, on te répond personnellement.</p>
+      <Footer />
     </main>
   );
 }
