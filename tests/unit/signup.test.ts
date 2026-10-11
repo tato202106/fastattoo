@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseSignup } from "@/lib/signup";
+import { signupEmail } from "@/lib/signup-notify";
 
 const valid = { name: "Léa Ink", city: "Nantes", email: "LEA@exemple.fr ", styles: ["fine-line", "inconnu"], priceFrom: "90", instagram: "@lea.ink", consent: true };
 
@@ -19,5 +20,16 @@ describe("parseSignup", () => {
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(Object.keys(r.errors).sort()).toEqual(["consent", "email", "styles"]);
+  });
+});
+
+describe("signupEmail", () => {
+  it("résume l'inscription sans lignes vides inutiles", () => {
+    const r = parseSignup(valid);
+    if (!r.ok) throw new Error("inscription invalide");
+    const mail = signupEmail(r.value);
+    expect(mail.subject).toBe("Nouvelle inscription : Léa Ink (Nantes)");
+    expect(mail.text).toContain("Styles : Fine Line");
+    expect(mail.text).not.toContain("Studio :");
   });
 });
