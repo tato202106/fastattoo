@@ -1,4 +1,5 @@
 import { ArtistPromo } from "@/components/home/ArtistPromo";
+import { Footer } from "@/components/legal/Footer";
 import { ClientDashboard, InstallBanner } from "@/components/home/HomeDeferred";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { HomeHero } from "@/components/home/HomeHero";
@@ -30,6 +31,7 @@ export default async function HomePage() {
         <NearbyArtists initial={featured} />
         <ArtistPromo />
       </div>
+      <Footer />
     </main>
   );
 }

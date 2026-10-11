@@ -138,7 +138,16 @@ export function SignupForm() {
 
         <label className="flex min-h-11 items-start gap-3 text-sm">
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[var(--accent)]" />
-          <span>J&apos;accepte que Fastattoo utilise ces informations et les photos de mes tatouages pour créer et afficher mon profil.</span>
+          <span>J&apos;accepte que Fastattoo utilise ces informations et les photos de mes tatouages pour créer et afficher mon profil (voir la{" "}
+            <Link href="/confidentialite" className="underline">
+              politique de confidentialité
+            </Link>{" "}
+            et les{" "}
+            <Link href="/cgv" className="underline">
+              CGV
+            </Link>
+            ).
+          </span>
         </label>
         {errors.consent && <span className="block text-sm text-accent">{errors.consent}</span>}
       </div>
