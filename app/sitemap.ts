@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { artists } from "@/lib/data";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fastattoo.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.fastattoo.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const slugs = await artists.allSlugs();
