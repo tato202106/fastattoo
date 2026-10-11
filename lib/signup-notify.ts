@@ -34,10 +34,13 @@ export function signupEmail(s: ArtistSignup): { subject: string; text: string } 
 export async function notifySignup(s: ArtistSignup): Promise<void> {
   const key = process.env.RESEND_API_KEY;
   const to = process.env.SIGNUP_NOTIFY_EMAIL;
-  if (!key || !to) return;
+  if (!key || !to) {
+    console.warn(`[inscription] alerte e-mail désactivée : ${!key ? "RESEND_API_KEY" : "SIGNUP_NOTIFY_EMAIL"} manquante`);
+    return;
+  }
   const { subject, text } = signupEmail(s);
   try {
-    await fetch("https://api.resend.com/emails", {
+    const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -49,7 +52,9 @@ export async function notifySignup(s: ArtistSignup): Promise<void> {
       }),
       signal: AbortSignal.timeout(8000),
     });
-  } catch {
+    if (!res.ok) console.error(`[inscription] Resend a refusé l'alerte (${res.status}) : ${await res.text().catch(() => "")}`);
+  } catch (e) {
     // Alerte non envoyée : sans conséquence pour l'inscription.
+    console.error("[inscription] envoi de l'alerte impossible :", e);
   }
 }
