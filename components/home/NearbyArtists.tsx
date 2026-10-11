@@ -6,6 +6,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { ArtistCardSkeleton } from "@/components/ui/Skeleton";
 import { DEFAULT_FILTERS } from "@/lib/search/filters";
+import { DEMO_PROFILES } from "@/lib/showcase";
 import { fetchSearch } from "@/lib/search/client";
 import { GEO_MESSAGES, geolocationAlreadyGranted, useLocation } from "@/lib/store/location";
 import type { ArtistCard as Card } from "@/lib/types";
@@ -50,7 +51,9 @@ export function NearbyArtists({ initial }: { initial: Card[] }) {
             Tatoueurs autour de toi
           </h2>
           <p className="text-sm text-muted" aria-live="polite">
-            {nearby
+            {DEMO_PROFILES
+              ? "Aperçu de Fastattoo avec des profils d'exemple"
+              : nearby
               ? nearby.total > 0
                 ? `${nearby.total} tatoueur${nearby.total > 1 ? "s" : ""} à moins de 10 km`
                 : "Aucun tatoueur à moins de 10 km — voici les mieux notés"

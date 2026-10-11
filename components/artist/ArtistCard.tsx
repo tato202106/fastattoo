@@ -6,6 +6,7 @@ import { Picture } from "@/components/ui/Picture";
 import { Rating } from "@/components/ui/Rating";
 import { relativeDay } from "@/lib/dates";
 import { formatDistance } from "@/lib/geo";
+import { DEMO_BADGE_LABEL, DEMO_PROFILES } from "@/lib/showcase";
 import { styleLabel } from "@/lib/styles";
 import type { ArtistCard as Card } from "@/lib/types";
 import { FavoriteButton } from "./FavoriteButton";
@@ -14,7 +15,11 @@ export function ArtistMeta({ artist, className, nowrap, hidePrice }: { artist: C
   const distance = formatDistance(artist.distanceKm);
   return (
     <p className={clsx("flex items-center gap-x-1.5 text-sm text-muted", nowrap ? "flex-nowrap overflow-hidden whitespace-nowrap" : "flex-wrap", className)}>
-      <Rating value={artist.rating} className="text-fg" />
+      {DEMO_PROFILES ? (
+        <DemoBadge />
+      ) : (
+        <Rating value={artist.rating} className="text-fg" />
+      )}
       <span aria-hidden>·</span>
       {distance ? <span>{distance}</span> : <span>{artist.city}</span>}
       {!hidePrice && (
@@ -24,6 +29,15 @@ export function ArtistMeta({ artist, className, nowrap, hidePrice }: { artist: C
         </>
       )}
     </p>
+  );
+}
+
+/** Badge affiché sur les profils de démonstration (voir lib/showcase.ts). */
+export function DemoBadge({ className }: { className?: string }) {
+  return (
+    <span className={clsx("inline-flex shrink-0 items-center rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-fg", className)}>
+      {DEMO_BADGE_LABEL}
+    </span>
   );
 }
 
@@ -71,7 +85,7 @@ export function ArtistCard({
                 {artist.name}
               </Link>
             )}
-            {artist.verified && <Icon name="verified" size={16} className="shrink-0 text-accent" aria-label="Vérifié" />}
+            {artist.verified && !DEMO_PROFILES && <Icon name="verified" size={16} className="shrink-0 text-accent" aria-label="Vérifié" />}
           </H>
           <ArtistMeta artist={artist} />
         </div>
@@ -93,7 +107,7 @@ export function ArtistCard({
           ))}
         </div>
       )}
-      {artist.nextSlot && (
+      {artist.nextSlot && !DEMO_PROFILES && (
         <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-success">
           <Icon name="clock" size={14} />
           Dispo {relativeDay(artist.nextSlot.date).toLowerCase()} à {artist.nextSlot.time.replace(":", "h")}
@@ -112,7 +126,7 @@ export function ArtistCompactCard({ artist, active }: { artist: Card; active?: b
         <div className="min-w-0 flex-1">
           <h2 className="flex items-center gap-1 text-[17px] font-semibold">
             <span className="truncate">{artist.name}</span>
-            {artist.verified && <Icon name="verified" size={16} className="shrink-0 text-accent" aria-label="Vérifiée" />}
+            {artist.verified && !DEMO_PROFILES && <Icon name="verified" size={16} className="shrink-0 text-accent" aria-label="Vérifiée" />}
           </h2>
           <ArtistMeta artist={artist} nowrap hidePrice />
           <p className="truncate text-sm text-fg/80">
