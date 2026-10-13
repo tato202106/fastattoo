@@ -56,13 +56,22 @@ export default function TermsPage() {
         </p>
       </section>
       <section>
-        <h2>7. Données personnelles</h2>
+        <h2>7. Parrainage</h2>
+        <p>
+          Un Abonné peut parrainer un ou une collègue. Lorsque le filleul, qui a indiqué le nom du parrain lors de son inscription, souscrit un
+          abonnement payant, le parrain bénéficie du badge « Parrain » et d&apos;une mise en avant de son profil dans la recherche pendant 1 mois,
+          prolongée d&apos;1 mois par nouveau filleul abonné. Cet avantage n&apos;a pas de valeur monétaire et ne peut pas être échangé. Fastattoo peut
+          modifier ou arrêter le programme à tout moment, sans effet sur les avantages déjà acquis.
+        </p>
+      </section>
+      <section>
+        <h2>8. Données personnelles</h2>
         <p>
           Voir la <Link href="/confidentialite">politique de confidentialité</Link>.
         </p>
       </section>
       <section>
-        <h2>8. Litiges</h2>
+        <h2>9. Litiges</h2>
         <p>
           Ces conditions sont soumises au droit français. En cas de désaccord, les parties cherchent d&apos;abord une solution amiable en écrivant à{" "}
           {contact}. À défaut, les tribunaux compétents sont ceux du ressort du siège de l&apos;éditeur.
