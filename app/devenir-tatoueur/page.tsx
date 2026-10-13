@@ -94,7 +94,7 @@ export default function BecomeArtistPage() {
 
       <section aria-labelledby="parrainage" className="mt-10 rounded-[var(--radius-card)] bg-surface-2 p-5">
         <h2 id="parrainage" className="flex items-center gap-2 text-xl font-semibold">
-          <Icon name="sparkle" size={22} className="text-accent" /> Parrainage
+          <Icon name="crown" size={22} strokeWidth={1.5} className="text-[#9a6b00]" /> Parrainage
         </h2>
         <p className="mt-2 text-[15px]">
           Déjà sur Fastattoo ? Fais venir un ou une collègue : quand ton filleul s&apos;abonne, tu gagnes le badge{" "}
