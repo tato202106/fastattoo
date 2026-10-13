@@ -29,8 +29,8 @@ export default function TermsPage() {
       <section>
         <h2>3. Prix et offre de lancement</h2>
         <p>
-          L&apos;abonnement coûte {PRO_PRICE_MONTHLY} € par mois ({LEGAL.vatMention}). Les {PRO_FREE_MONTHS} premiers mois sont offerts aux premiers
-          inscrits : aucun paiement n&apos;est demandé pendant cette période, et l&apos;Abonné est prévenu par e-mail avant la fin de la période gratuite.
+          L&apos;abonnement coûte {PRO_PRICE_MONTHLY} € par mois ({LEGAL.vatMention}). {PRO_FREE_MONTHS > 1 ? `Les ${PRO_FREE_MONTHS} premiers mois sont offerts` : "Le premier mois est offert"} aux
+          premiers inscrits : aucun paiement n&apos;est demandé pendant cette période, et l&apos;Abonné est prévenu par e-mail avant la fin de la période gratuite.
           Il ne devient payant que si l&apos;Abonné confirme vouloir continuer. Fastattoo peut modifier ses prix en prévenant l&apos;Abonné au moins 30
           jours à l&apos;avance ; l&apos;Abonné peut alors résilier sans frais.
         </p>
