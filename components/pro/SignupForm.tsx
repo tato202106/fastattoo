@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { buttonClass } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { PRO_FREE_MONTHS, PRO_PRICE_MONTHLY } from "@/lib/pro-offer";
+import { PRO_FREE_LABEL, PRO_PRICE_MONTHLY } from "@/lib/pro-offer";
 import type { ArtistSignup } from "@/lib/signup";
 import { STYLES } from "@/lib/styles";
 import type { StyleSlug } from "@/lib/types";
@@ -79,7 +79,7 @@ export function SignupForm() {
       </Link>
       <h1 className="mt-1 font-display text-[28px] leading-tight font-bold">Inscris-toi sur Fastattoo</h1>
       <p className="mt-2 text-[15px] text-muted">
-        {PRO_FREE_MONTHS} mois offerts, puis {PRO_PRICE_MONTHLY} € par mois sans engagement. Rien à payer aujourd&apos;hui : on te recontacte pour créer ton profil.
+        {PRO_FREE_LABEL}, puis {PRO_PRICE_MONTHLY} € par mois sans engagement. Rien à payer aujourd&apos;hui : on te recontacte pour créer ton profil.
       </p>
 
       <div className="mt-6 space-y-4">

@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buttonClass } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
-import { PRO_FREE_MONTHS, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL } from "@/lib/pro-offer";
+import { PRO_FREE_LABEL, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL } from "@/lib/pro-offer";
 
 export const metadata: Metadata = {
   title: "Tatoueurs : rejoins Fastattoo",
-  description: `Sois visible auprès des personnes qui cherchent un tatoueur près de chez elles. ${PRO_FREE_MONTHS} mois offerts, puis ${PRO_PRICE_MONTHLY} € par mois sans engagement.`,
+  description: `Sois visible auprès des personnes qui cherchent un tatoueur près de chez elles. ${PRO_FREE_LABEL}, puis ${PRO_PRICE_MONTHLY} € par mois sans engagement.`,
 };
 
 const BENEFITS: { icon: IconName; title: string; text: string }[] = [
@@ -100,7 +100,7 @@ export default function BecomeArtistPage() {
           <span className="text-muted"> / mois</span>
         </p>
         <p className="mt-2 inline-flex rounded-full bg-accent-soft px-3 py-1 text-sm font-semibold text-accent">
-          {PRO_FREE_MONTHS} mois offerts pour les premiers inscrits
+          {PRO_FREE_LABEL} pour les premiers inscrits
         </p>
         <ul className="mt-4 space-y-2 text-[15px]">
           {["Sans engagement, résiliable à tout moment", "Profil et portfolio mis en avant sur la carte", "Demandes, messages et agenda inclus"].map((t) => (
