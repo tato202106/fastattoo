@@ -6,13 +6,14 @@
 import { CITY_RADIUS_KM } from "../cities";
 import { diffDays, todayISO } from "../dates";
 import { bboxCenter, haversineKm, inBBox } from "../geo";
+import { isSponsorActive } from "../referral";
 import type { Artist, ArtistCard, LatLng, SearchQuery, SearchResponse } from "../types";
 import { nameScore, parseQuery } from "./parse";
 
 export const MAX_MARKERS = 200;
 export const MAX_PAGE_SIZE = 50;
 
-export function toCard(a: Artist, distanceKm: number | null): ArtistCard {
+export function toCard(a: Artist, distanceKm: number | null, today = todayISO()): ArtistCard {
   return {
     id: a.id,
     slug: a.slug,
@@ -30,6 +31,7 @@ export function toCard(a: Artist, distanceKm: number | null): ArtistCard {
     previews: a.portfolio.slice(0, 3).map(({ id, base, width, height, color, alt }) => ({ id, base, width, height, color, alt })),
     nextSlot: a.nextSlots[0] ?? null,
     distanceKm: distanceKm == null ? null : Math.round(distanceKm * 10) / 10,
+    ...(isSponsorActive(a.sponsorUntil, today) ? { sponsor: true } : {}),
   };
 }
 
@@ -80,13 +82,17 @@ export function searchArtists(artists: Artist[], query: SearchQuery, today = tod
 
   scored.sort((x, y) => {
     if (x.score !== y.score) return y.score - x.score;
+    // Parrains actifs mis en avant (à pertinence égale).
+    const sx = isSponsorActive(x.artist.sponsorUntil, today) ? 1 : 0;
+    const sy = isSponsorActive(y.artist.sponsorUntil, today) ? 1 : 0;
+    if (sx !== sy) return sy - sx;
     if (x.distance != null && y.distance != null && area) return x.distance - y.distance;
     return popularity(y.artist) - popularity(x.artist);
   });
 
   const pageSize = Math.min(Math.max(query.pageSize, 0), MAX_PAGE_SIZE);
   const page = Math.max(1, query.page);
-  const cards = scored.map((s) => toCard(s.artist, s.distance));
+  const cards = scored.map((s) => toCard(s.artist, s.distance, today));
   const start = (page - 1) * pageSize;
 
   return {

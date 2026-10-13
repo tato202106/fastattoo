@@ -3,6 +3,7 @@ import Link from "next/link";
 import { buttonClass } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { PRO_FREE_LABEL, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL } from "@/lib/pro-offer";
+import { SPONSOR_BOOST_MONTHS } from "@/lib/referral";
 
 export const metadata: Metadata = {
   title: "Tatoueurs : rejoins Fastattoo",
@@ -89,6 +90,22 @@ export default function BecomeArtistPage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section aria-labelledby="parrainage" className="mt-10 rounded-[var(--radius-card)] bg-surface-2 p-5">
+        <h2 id="parrainage" className="flex items-center gap-2 text-xl font-semibold">
+          <Icon name="sparkle" size={22} className="text-accent" /> Parrainage
+        </h2>
+        <p className="mt-2 text-[15px]">
+          Déjà sur Fastattoo ? Fais venir un ou une collègue : quand ton filleul s&apos;abonne, tu gagnes le badge{" "}
+          <strong>« Parrain »</strong> et ton profil est <strong>mis en avant dans la recherche pendant {SPONSOR_BOOST_MONTHS} mois</strong>.
+        </p>
+        <ol className="mt-3 space-y-1.5 text-[15px]">
+          <li>1. Ton filleul s&apos;inscrit avec le formulaire.</li>
+          <li>2. Il indique ton nom ou ton @Instagram dans « Parrainé·e par ».</li>
+          <li>3. Dès son abonnement, ta mise en avant démarre.</li>
+        </ol>
+        <p className="mt-3 text-sm text-muted">Pas de limite : chaque nouveau filleul abonné prolonge ta mise en avant.</p>
       </section>
 
       <section aria-labelledby="tarif" className="mt-10 rounded-[var(--radius-card)] border-2 border-accent bg-surface p-5">

@@ -16,6 +16,7 @@ export function signupEmail(s: ArtistSignup): { subject: string; text: string } 
     line("Instagram", s.instagram ? `https://instagram.com/${s.instagram}` : ""),
     line("Styles", s.styles.map(styleLabel).join(", ")),
     line("Prix minimum", s.priceFrom ? `${s.priceFrom} €` : null),
+    line("Parrainé·e par", s.referrer),
     s.message ? `\nMessage :\n${s.message}` : null,
     "",
     "Accord pour l'utilisation des infos et des photos : oui",
@@ -23,7 +24,7 @@ export function signupEmail(s: ArtistSignup): { subject: string; text: string } 
   ]
     .filter((l) => l !== null)
     .join("\n");
-  return { subject: `Nouvelle inscription : ${s.name} (${s.city})`, text };
+  return { subject: `Nouvelle inscription : ${s.name} (${s.city})${s.referrer ? " · parrainage" : ""}`, text };
 }
 
 /**

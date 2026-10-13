@@ -87,6 +87,8 @@ export interface Artist {
   instagram?: string;
   /** Point d'extension Phase 6 (mise en avant payante). Non utilisé pour l'instant. */
   promoted?: boolean;
+  /** Fin de la mise en avant « Parrain » (AAAA-MM-JJ), voir lib/referral.ts. */
+  sponsorUntil?: string;
 }
 
 /** Version légère d'un tatoueur pour les listes, la carte et le carrousel. */
@@ -108,6 +110,8 @@ export interface ArtistCard {
   previews: ImageAsset[];
   nextSlot: Slot | null;
   distanceKm: number | null;
+  /** Parrain actif : badge et mise en avant. */
+  sponsor?: boolean;
 }
 
 export type Availability = "today" | "week" | "month";

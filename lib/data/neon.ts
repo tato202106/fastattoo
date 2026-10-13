@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import type { Artist, SearchQuery } from "../types";
+import { toISODate } from "../referral";
 import { MemoryArtistRepository } from "./memory";
 import type { ArtistRepository } from "./repository";
 
@@ -73,6 +74,7 @@ async function loadArtists(): Promise<Artist[]> {
     nextSlots: (slots.get(a.id) ?? []).map((s) => ({ date: s.date, time: s.time })),
     ...(a.instagram ? { instagram: a.instagram } : {}),
     ...(a.promoted ? { promoted: true } : {}),
+    ...(toISODate(a.sponsor_until) ? { sponsorUntil: toISODate(a.sponsor_until) } : {}),
   }));
 }
 

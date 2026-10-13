@@ -34,8 +34,9 @@ export async function POST(req: Request) {
       message text,
       consent boolean NOT NULL
     )`;
-    await sql`INSERT INTO artist_signups (name, studio, address, city, email, phone, instagram, styles, price_from, message, consent)
-      VALUES (${s.name}, ${s.studio}, ${s.address}, ${s.city}, ${s.email}, ${s.phone}, ${s.instagram}, ${s.styles}, ${s.priceFrom}, ${s.message}, ${s.consent})`;
+    await sql`ALTER TABLE artist_signups ADD COLUMN IF NOT EXISTS referrer text`;
+    await sql`INSERT INTO artist_signups (name, studio, address, city, email, phone, instagram, styles, price_from, message, consent, referrer)
+      VALUES (${s.name}, ${s.studio}, ${s.address}, ${s.city}, ${s.email}, ${s.phone}, ${s.instagram}, ${s.styles}, ${s.priceFrom}, ${s.message}, ${s.consent}, ${s.referrer})`;
   } catch {
     return Response.json({ error: "Impossible d'enregistrer ton inscription. Réessaie dans un instant." }, { status: 500 });
   }

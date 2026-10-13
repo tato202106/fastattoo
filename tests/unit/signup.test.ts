@@ -33,3 +33,14 @@ describe("signupEmail", () => {
     expect(mail.text).not.toContain("Studio :");
   });
 });
+
+describe("parrainage", () => {
+  it("garde le parrain indiqué et le signale dans l'alerte", () => {
+    const r = parseSignup({ ...valid, referrer: " @lea.ink " });
+    if (!r.ok) throw new Error("inscription invalide");
+    expect(r.value.referrer).toBe("@lea.ink");
+    const mail = signupEmail(r.value);
+    expect(mail.subject).toContain("parrainage");
+    expect(mail.text).toContain("Parrainé·e par : @lea.ink");
+  });
+});

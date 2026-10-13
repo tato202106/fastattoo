@@ -32,6 +32,15 @@ export function ArtistMeta({ artist, className, nowrap, hidePrice }: { artist: C
   );
 }
 
+/** Badge « Parrain » : tatoueur qui a parrainé un nouvel abonné (lib/referral.ts). */
+export function SponsorBadge({ className }: { className?: string }) {
+  return (
+    <span className={clsx("inline-flex shrink-0 items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent", className)}>
+      <Icon name="sparkle" size={12} /> Parrain
+    </span>
+  );
+}
+
 /** Badge affiché sur les profils de démonstration (voir lib/showcase.ts). */
 export function DemoBadge({ className }: { className?: string }) {
   return (
@@ -88,6 +97,7 @@ export function ArtistCard({
             {artist.verified && !DEMO_PROFILES && <Icon name="verified" size={16} className="shrink-0 text-accent" aria-label="Vérifié" />}
           </H>
           <ArtistMeta artist={artist} />
+          {artist.sponsor && <SponsorBadge className="mt-1" />}
         </div>
         {onPick ? (
           <Link href={`/tatoueurs/${artist.slug}`} className="tap relative z-10 inline-flex h-10 items-center rounded-full bg-fg px-4 text-sm font-semibold text-bg">
