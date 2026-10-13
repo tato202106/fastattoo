@@ -2,6 +2,7 @@
 
 import clsx from "clsx";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { buttonClass } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
@@ -28,6 +29,7 @@ function Field({ label, error, optional, children }: { label: string; error?: st
 }
 
 export function SignupForm() {
+  const referrerParam = useSearchParams().get("parrain") ?? "";
   const [styles, setStyles] = useState<StyleSlug[]>([]);
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
@@ -128,6 +130,9 @@ export function SignupForm() {
 
         <Field label="Prix minimum d'un tatouage (€)" optional>
           <input name="priceFrom" type="number" inputMode="numeric" min={1} className={INPUT} />
+        </Field>
+        <Field label="Parrainé·e par un tatoueur de Fastattoo ?" optional>
+          <input name="referrer" defaultValue={referrerParam} placeholder="Son nom ou son @Instagram" autoCapitalize="none" className={INPUT} />
         </Field>
         <Field label="Une question ou un message ?" optional>
           <textarea name="message" rows={4} className="mt-1 w-full rounded-xl border border-border bg-surface p-3 outline-none focus:border-fg" />

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DemoBadge } from "@/components/artist/ArtistCard";
+import { DemoBadge, SponsorBadge } from "@/components/artist/ArtistCard";
 import { FavoriteButton } from "@/components/artist/FavoriteButton";
 import { MiniMap } from "@/components/artist/MiniMap";
 import { PortfolioGallery } from "@/components/artist/PortfolioGallery";
@@ -69,6 +69,7 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
           <p className="text-[15px] text-muted">
             {a.title} · {a.city}
           </p>
+          {card.sponsor && <SponsorBadge className="mt-1" />}
         </div>
       </div>
       {DEMO_PROFILES && (

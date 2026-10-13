@@ -13,6 +13,8 @@ export interface ArtistSignup {
   styles: StyleSlug[];
   priceFrom: number | null;
   message: string;
+  /** Parrain indiqué par le tatoueur (nom, @Instagram ou identifiant). */
+  referrer: string;
   consent: true;
 }
 
@@ -36,6 +38,7 @@ export function parseSignup(input: Record<string, unknown>): SignupResult {
   const phone = text(input.phone, 30);
   const instagram = text(input.instagram, 60).replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//, "").replace(/\/$/, "");
   const message = text(input.message, 2000);
+  const referrer = text(input.referrer, 120);
   const styles = (Array.isArray(input.styles) ? input.styles : []).filter((s): s is StyleSlug => typeof s === "string" && STYLE_SLUGS.has(s));
   const rawPrice = typeof input.priceFrom === "number" ? input.priceFrom : Number(text(input.priceFrom, 10).replace(",", "."));
   const priceFrom = Number.isFinite(rawPrice) && rawPrice > 0 && rawPrice < 100000 ? Math.round(rawPrice) : null;
@@ -47,5 +50,5 @@ export function parseSignup(input: Record<string, unknown>): SignupResult {
   if (input.consent !== true) errors.consent = "Ton accord est nécessaire pour créer ton profil.";
 
   if (Object.keys(errors).length) return { ok: false, errors };
-  return { ok: true, value: { name, studio, address, city, email, phone, instagram, styles: [...new Set(styles)], priceFrom, message, consent: true } };
+  return { ok: true, value: { name, studio, address, city, email, phone, instagram, styles: [...new Set(styles)], priceFrom, message, referrer, consent: true } };
 }

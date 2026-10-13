@@ -1,4 +1,5 @@
 import { CITIES } from "../cities";
+import { isSponsorActive } from "../referral";
 import { searchArtists, toCard } from "../search/engine";
 import { STYLES } from "../styles";
 import { normalize } from "../text";
@@ -32,7 +33,11 @@ export class MemoryArtistRepository implements ArtistRepository {
 
   async featured(limit: number) {
     return [...this.source()]
-      .sort((a, b) => b.rating * Math.log(b.reviewCount + 1) - a.rating * Math.log(a.reviewCount + 1))
+      .sort(
+        (a, b) =>
+          Number(isSponsorActive(b.sponsorUntil)) - Number(isSponsorActive(a.sponsorUntil)) ||
+          b.rating * Math.log(b.reviewCount + 1) - a.rating * Math.log(a.reviewCount + 1),
+      )
       .slice(0, limit)
       .map((a) => toCard(a, null));
   }
