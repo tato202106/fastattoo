@@ -33,6 +33,7 @@ const PATHS = {
   settings: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm7.4-3a7.4 7.4 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-2-1.2L14.5 3h-4l-.4 2.6a7.6 7.6 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7.4 7.4 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 2 1.2l.4 2.6h4l.4-2.6a7.6 7.6 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z",
   logout: "M15 4h3.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H15M10 8l-4 4 4 4M6 12h10",
   download: "M12 3v12m-4.5-4.5L12 15l4.5-4.5M5 19h14",
+  crown: "M3 7.5l4.5 4L12 4l4.5 7.5 4.5-4L19 18H5zM5 21h14",
   sparkle: "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2 2.2.8-2.2.8L19 22l-.8-2.2-2.2-.8 2.2-.8z",
   chart: "M4 20V10m6 10V4m6 16v-7m4 7H3",
   lock: "M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 1 1 7 0v3",
@@ -48,7 +49,7 @@ const PATHS = {
 
 export type IconName = keyof typeof PATHS;
 
-const FILLED: Partial<Record<IconName, true>> = { star: true };
+const FILLED: Partial<Record<IconName, true>> = { star: true, crown: true };
 
 export function Icon({
   name,

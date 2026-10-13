@@ -35,8 +35,8 @@ export function ArtistMeta({ artist, className, nowrap, hidePrice }: { artist: C
 /** Badge « Parrain » : tatoueur qui a parrainé un nouvel abonné (lib/referral.ts). */
 export function SponsorBadge({ className }: { className?: string }) {
   return (
-    <span className={clsx("inline-flex shrink-0 items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent", className)}>
-      <Icon name="sparkle" size={12} /> Parrain
+    <span className={clsx("inline-flex shrink-0 items-center gap-1 rounded-full bg-[#fbf0d2] px-2 py-0.5 text-xs font-semibold text-[#9a6b00]", className)}>
+      <Icon name="crown" size={12} strokeWidth={1.5} /> Parrain
     </span>
   );
 }
