@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Sheet } from "@/components/ui/Sheet";
 import { formatShortDay, formatTime, relativeDay } from "@/lib/dates";
+import { PLANS } from "@/lib/billing/plans";
 import { requestPushPermission } from "@/lib/notifications/channels";
 import { pastAppointments, upcomingAppointments, useApp } from "@/lib/store/app";
 import { DEMO_ARTIST_SLUG } from "@/lib/store/ids";
@@ -41,6 +42,7 @@ export function ProfileView() {
   const appointments = useApp((s) => s.appointments);
   const logout = useApp((s) => s.logout);
   const resetDemo = useApp((s) => s.resetDemo);
+  const subscription = useApp((s) => s.subscription);
   const [push, setPush] = useState<string>(() => (typeof Notification === "undefined" ? "unsupported" : Notification.permission));
   const [reviewFor, setReviewFor] = useState<Appointment | null>(null);
   const isArtist = session.role === "artist";
@@ -104,6 +106,7 @@ export function ProfileView() {
         {isArtist ? (
           <>
             <Row icon="grid" label="Mon dashboard" href="/pro" />
+            <Row icon="euro" label="Mon abonnement" href="/pro/abonnement" hint={subscription ? PLANS[subscription.plan].name : "À activer"} />
             <Row icon="image" label="Mon portfolio" href="/pro/portfolio" />
             <Row icon="edit" label="Profil professionnel" href="/pro/onboarding" />
             <Row icon="user" label="Voir mon profil public" href={`/tatoueurs/${DEMO_ARTIST_SLUG}`} />

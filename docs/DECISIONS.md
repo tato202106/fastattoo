@@ -99,6 +99,13 @@ Limites connues :
 - **LCP de l'accueil** : légèrement au-dessus de 2,5 s en simulation. Le délai de rendu est lié à l'exécution du JS du framework. Pistes : réduire encore les composants clients de l'accueil, et servir les images de démo pré-générées via CDN.
 - Les variantes d'images sont générées à la première requête : derrière un CDN, seule la toute première visite paie ce coût.
 
-## Monétisation (Phase 6, non implémentée)
+## Monétisation (Phase 6) — abonnement tatoueur
 
-Points d'extension prévus : `Artist.promoted` (mise en avant dans le tri), séparation des actions « demande » et « réservation » dans le store, pour y brancher acompte, paiement ou commission.
+- **Deux forfaits** : annuel **179 €/an** (mis en avant, présélectionné) et mensuel **19,90 €/mois**. Le prix mensuel n'était pas fixé par la demande : choisi pour que l'annuel représente −25 % (3 mois offerts, 14,92 €/mois). Modifiable dans `lib/billing/plans.ts`.
+- **Paiement à l'inscription** : connexion → profil pro (onboarding) → page d'abonnement → dashboard. Tant qu'il n'y a pas d'abonnement, toutes les pages `/pro` redirigent vers `/pro/abonnement` (sauf l'onboarding).
+- **Abonnés au mensuel** : des slides « passe à l'annuel » (3 slides : prix, 3 mois offerts, un seul paiement) s'ouvrent dans un sheet sur le dashboard au plus une fois par semaine (« Plus tard » repousse de 7 jours). Elles restent aussi en permanence dans le dashboard, avec un bouton vers `/pro/abonnement?plan=annual`.
+- **Slides** : swipe horizontal, points de navigation, défilement automatique toutes les 4,5 s, mis en pause au toucher et désactivé si l'utilisateur réduit les animations. Uniquement des faits vérifiables (prix et économies calculés), pas de promesse non tenue.
+- **Paiement réel = Stripe Checkout** (page hébergée par Stripe : carte, Apple Pay, Google Pay). Aucune donnée de carte ne passe par l'application. Le paiement est **vérifié côté serveur** (`/api/billing/verify`) avant activation. L'identifiant d'abonnement Stripe est gardé dans un cookie httpOnly, et le passage à l'annuel modifie l'abonnement existant avec prorata, sans double abonnement.
+- **Mode démo** (pas de `STRIPE_SECRET_KEY`) : récapitulatif + confirmation explicitement marqués « Mode démonstration ». Volontairement aucun faux champ de carte.
+- **Limites avant production** : pas encore de comptes ni de base de données. L'état d'abonnement est gardé sur l'appareil et l'upgrade est relié au navigateur par cookie. Il faudra brancher l'authentification, enregistrer l'abonnement en base et ajouter un webhook Stripe (renouvellements, échecs de paiement, résiliation), ainsi qu'un lien vers le portail client Stripe pour gérer et résilier.
+- Reste de la Phase 6 non implémenté : mise en avant (`Artist.promoted`), commission sur réservation.

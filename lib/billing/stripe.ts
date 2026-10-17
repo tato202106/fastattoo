@@ -1,0 +1,112 @@
+import "server-only";
+import { CURRENCY, PLANS, type PlanId } from "./plans";
+
+/**
+ * Client Stripe minimal (API REST, sans dépendance).
+ * Le paiement se fait sur Stripe Checkout (page hébergée par Stripe) : aucune
+ * donnée de carte ne transite par nos serveurs.
+ */
+const API = "https://api.stripe.com/v1";
+
+export function stripeEnabled(): boolean {
+  return Boolean(process.env.STRIPE_SECRET_KEY);
+}
+
+function encode(params: Record<string, string | number | undefined>): string {
+  const body = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v !== undefined) body.append(k, String(v));
+  return body.toString();
+}
+
+async function stripe<T>(method: "GET" | "POST", path: string, params?: Record<string, string | number | undefined>): Promise<T> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("Stripe non configuré");
+  const res = await fetch(`${API}${path}${method === "GET" && params ? `?${encode(params)}` : ""}`, {
+    method,
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: method === "POST" && params ? encode(params) : undefined,
+    cache: "no-store",
+  });
+  const json = (await res.json()) as T & { error?: { message?: string } };
+  if (!res.ok) throw new Error(json.error?.message ?? `Stripe ${res.status}`);
+  return json;
+}
+
+/** Prix configuré dans Stripe (STRIPE_PRICE_MONTHLY / STRIPE_PRICE_ANNUAL) ou défini à la volée. */
+function priceParams(plan: PlanId, prefix: string): Record<string, string | number> {
+  const priceId = plan === "annual" ? process.env.STRIPE_PRICE_ANNUAL : process.env.STRIPE_PRICE_MONTHLY;
+  if (priceId) return { [`${prefix}[price]`]: priceId };
+  const p = PLANS[plan];
+  return {
+    [`${prefix}[price_data][currency]`]: CURRENCY,
+    [`${prefix}[price_data][unit_amount]`]: p.amount,
+    [`${prefix}[price_data][recurring][interval]`]: p.interval,
+    [`${prefix}[price_data][product_data][name]`]: `Fastattoo Pro — ${p.name}`,
+  };
+}
+
+export async function createCheckoutSession(opts: { plan: PlanId; email?: string; artistId: string; origin: string }) {
+  return stripe<{ id: string; url: string }>("POST", "/checkout/sessions", {
+    mode: "subscription",
+    locale: "fr",
+    ...priceParams(opts.plan, "line_items[0]"),
+    "line_items[0][quantity]": 1,
+    customer_email: opts.email || undefined,
+    client_reference_id: opts.artistId,
+    "metadata[plan]": opts.plan,
+    "subscription_data[metadata][plan]": opts.plan,
+    "subscription_data[metadata][artist_id]": opts.artistId,
+    allow_promotion_codes: "true",
+    success_url: `${opts.origin}/pro/abonnement/confirmation?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${opts.origin}/pro/abonnement?annule=1`,
+  });
+}
+
+interface StripeSubscription {
+  id: string;
+  status: string;
+  current_period_end?: number;
+  items: { data: { id: string; current_period_end?: number; price: { id: string; product: string; recurring?: { interval: string } } }[] };
+  metadata?: Record<string, string>;
+}
+
+export async function retrieveCheckoutSession(id: string) {
+  return stripe<{ id: string; status: string; payment_status: string; subscription: string | StripeSubscription | null; metadata?: Record<string, string> }>(
+    "GET",
+    `/checkout/sessions/${encodeURIComponent(id)}`,
+    { "expand[]": "subscription" },
+  );
+}
+
+export async function retrieveSubscription(id: string) {
+  return stripe<StripeSubscription>("GET", `/subscriptions/${encodeURIComponent(id)}`);
+}
+
+/** Passage au forfait annuel : remplace l'article de l'abonnement, facture le prorata tout de suite. */
+export async function upgradeToAnnual(subscriptionId: string) {
+  const sub = await retrieveSubscription(subscriptionId);
+  const item = sub.items.data[0];
+  if (!item) throw new Error("Abonnement sans article");
+  const priceId = process.env.STRIPE_PRICE_ANNUAL;
+  const price: Record<string, string | number> = priceId
+    ? { "items[0][price]": priceId }
+    : {
+        "items[0][price_data][currency]": CURRENCY,
+        "items[0][price_data][unit_amount]": PLANS.annual.amount,
+        "items[0][price_data][recurring][interval]": "year",
+        "items[0][price_data][product]": item.price.product,
+      };
+  return stripe<StripeSubscription>("POST", `/subscriptions/${encodeURIComponent(subscriptionId)}`, {
+    "items[0][id]": item.id,
+    ...price,
+    proration_behavior: "always_invoice",
+    "metadata[plan]": "annual",
+  });
+}
+
+export function periodEnd(sub: StripeSubscription): number | undefined {
+  return sub.current_period_end ?? sub.items.data[0]?.current_period_end;
+}
+
+/** Cookie httpOnly qui relie le navigateur à son abonnement Stripe (pas d'identifiant manipulable côté client). */
+export const SUBSCRIPTION_COOKIE = "ft_sub";

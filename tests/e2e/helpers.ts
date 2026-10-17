@@ -13,14 +13,30 @@ export async function expectNoHorizontalScroll(page: Page) {
   expect(overflow).toBeLessThanOrEqual(1);
 }
 
-export async function loginAs(page: Page, role: "client" | "artist") {
-  await page.addInitScript((r) => {
-    if (localStorage.getItem("fastattoo-v1")) return;
-    localStorage.setItem(
-      "fastattoo-v1",
-      JSON.stringify({ state: { session: { role: r, userId: r === "artist" ? "a001" : "client-me", name: r === "artist" ? "Léa" : "Thomas", email: "" } }, version: 1 }),
-    );
-  }, role);
+/**
+ * Connecte un compte de démo. Pour un tatoueur, `plan` fixe l'abonnement :
+ * "annual" par défaut (pas de slides), "monthly" (slides d'upgrade), null (pas encore payé).
+ */
+export async function loginAs(page: Page, role: "client" | "artist", opts: { plan?: "monthly" | "annual" | null; upsellSeen?: boolean } = {}) {
+  const plan = opts.plan === undefined ? "annual" : opts.plan;
+  await page.addInitScript(
+    ({ r, plan, upsellSeen }) => {
+      if (localStorage.getItem("fastattoo-v1")) return;
+      const subscription = r === "artist" && plan ? { plan, status: "active", provider: "demo", startedAt: "2026-01-01", renewsAt: "2027-01-01" } : null;
+      localStorage.setItem(
+        "fastattoo-v1",
+        JSON.stringify({
+          state: {
+            session: { role: r, userId: r === "artist" ? "a001" : "client-me", name: r === "artist" ? "Léa" : "Thomas", email: "" },
+            subscription,
+            upsellDismissedAt: upsellSeen ? Date.now() : null,
+          },
+          version: 1,
+        }),
+      );
+    },
+    { r: role, plan, upsellSeen: opts.upsellSeen ?? false },
+  );
 }
 
 /** Zones tactiles des éléments interactifs visibles ≥ 44×44 px (tolérance 1px). */
