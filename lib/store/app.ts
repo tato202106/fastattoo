@@ -15,7 +15,7 @@ import { addDays, diffDays, formatTime, relativeDay, todayISO } from "../dates";
 import { dispatchExternal } from "../notifications/channels";
 import { styleLabel, zoneLabel } from "../styles";
 import type { ImageAsset } from "../types";
-import { renewalDate } from "../billing/plans";
+import { firstChargeDate, renewalDate, TRIAL_MONTHS } from "../billing/plans";
 import { CLIENT_ID, DEMO_CLIENT_NAME } from "./ids";
 import type {
   Appointment,
@@ -84,7 +84,7 @@ interface AppState {
   markNotificationsRead(role: Role, recipientId: string): void;
   dismissToast(): void;
   dismissInstall(): void;
-  activateSubscription(sub: Pick<ArtistSubscription, "plan" | "provider"> & { renewsAt?: string | null }): void;
+  activateSubscription(sub: Pick<ArtistSubscription, "plan" | "provider"> & { renewsAt?: string | null; trialEndsAt?: string | null }): void;
   dismissUpsell(): void;
   ensureReminders(): void;
   /** Charge les données de démo (module importé à la demande, hors du bundle initial). */
@@ -347,11 +347,20 @@ export const useApp = create<AppState>()(
         dismissToast() {
           set({ toast: null });
         },
-        activateSubscription({ plan, provider, renewsAt }) {
+        activateSubscription({ plan, provider, renewsAt, trialEndsAt }) {
           const today = todayISO();
           const previous = get().subscription;
+          // Première souscription : offre de lancement (mois offerts) avant le premier prélèvement.
+          const trial = trialEndsAt !== undefined ? trialEndsAt : !previous && TRIAL_MONTHS > 0 ? firstChargeDate(today) : null;
           set({
-            subscription: { plan, provider, status: "active", startedAt: previous?.startedAt ?? today, renewsAt: renewsAt ?? renewalDate(today, plan) },
+            subscription: {
+              plan,
+              provider,
+              status: "active",
+              startedAt: previous?.startedAt ?? today,
+              renewsAt: renewsAt ?? trial ?? renewalDate(today, plan),
+              trialEndsAt: trial,
+            },
           });
           const session = get().session;
           if (session?.role === "artist") {

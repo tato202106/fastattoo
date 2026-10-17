@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { annualSavings, formatPrice, PLAN_FEATURES, PLANS, type PlanId } from "@/lib/billing/plans";
+import { annualSavings, formatPrice, PLAN_FEATURES, PLANS, TRIAL_LABEL, type PlanId } from "@/lib/billing/plans";
 import { formatLongDate } from "@/lib/dates";
 import { useApp } from "@/lib/store/app";
 import { DemoPaymentSheet } from "./DemoPaymentSheet";
@@ -14,7 +14,7 @@ import { usePayment } from "./usePayment";
 
 const savings = annualSavings();
 
-function PlanOption({ plan, selected, onSelect }: { plan: PlanId; selected: boolean; onSelect: () => void }) {
+export function PlanOption({ plan, selected, onSelect }: { plan: PlanId; selected: boolean; onSelect: () => void }) {
   const p = PLANS[plan];
   const annual = plan === "annual";
   return (
@@ -25,7 +25,7 @@ function PlanOption({ plan, selected, onSelect }: { plan: PlanId; selected: bool
       onClick={onSelect}
       className={clsx("tap relative w-full rounded-2xl border-2 bg-surface p-4 text-left", selected ? "border-fg" : "border-border")}
     >
-      {annual && <span className="absolute -top-3 right-4 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-accent-fg">−{savings.percent} % · {savings.freeMonths} mois offerts</span>}
+      {annual && <span className="absolute -top-3 right-4 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-accent-fg">−{savings.percent} % · {formatPrice(savings.saved)} d&apos;économie</span>}
       <span className="flex items-center gap-3">
         <span className={clsx("inline-flex size-6 shrink-0 items-center justify-center rounded-full border-2", selected ? "border-fg bg-fg" : "border-border")}>
           {selected && <Icon name="check" size={14} strokeWidth={3} className="text-bg" />}
@@ -54,7 +54,7 @@ export function SubscriptionPage() {
   const params = useSearchParams();
   const subscription = useApp((s) => s.subscription);
   const [plan, setPlan] = useState<PlanId>(params.get("plan") === "monthly" ? "monthly" : "annual");
-  const { mode, busy, error, pay, demoPlan, confirmDemo, cancelDemo } = usePayment();
+  const { ready, busy, error, pay, demoPlan, confirmDemo, cancelDemo } = usePayment();
   const [justPaid, setJustPaid] = useState(false);
   const cancelled = params.get("annule") === "1";
 
@@ -69,7 +69,7 @@ export function SubscriptionPage() {
   };
 
   const payButton = (target: PlanId, label: string) => (
-    <Button size="lg" className="w-full" disabled={busy || mode == null} onClick={async () => (await pay(target)) === "done" && setJustPaid(true)}>
+    <Button size="lg" className="w-full" disabled={busy || !ready} onClick={async () => (await pay(target)) === "done" && setJustPaid(true)}>
       {busy ? "Redirection vers le paiement…" : label}
     </Button>
   );
@@ -84,7 +84,9 @@ export function SubscriptionPage() {
           <p className="mt-1 text-2xl font-bold">
             {current.name} · {formatPrice(current.amount)} / {current.per}
           </p>
-          <p className="mt-1 text-sm text-muted">Renouvellement le {formatLongDate(subscription.renewsAt)}</p>
+          <p className="mt-1 text-sm text-muted">
+            {subscription.trialEndsAt ? `${TRIAL_LABEL} : premier prélèvement le ${formatLongDate(subscription.renewsAt)}` : `Renouvellement le ${formatLongDate(subscription.renewsAt)}`}
+          </p>
           {subscription.provider === "demo" && <p className="mt-2 text-xs text-warning">Abonnement de démonstration (aucun paiement réel).</p>}
         </section>
 
@@ -111,7 +113,7 @@ export function SubscriptionPage() {
           <section className="rounded-2xl bg-success/10 p-4">
             <p className="font-semibold text-success">Tu profites déjà du meilleur tarif 🎉</p>
             <p className="mt-1 text-sm">
-              {savings.freeMonths} mois offerts par rapport au forfait mensuel, soit {formatPrice(savings.saved)} d&apos;économie par an.
+              {formatPrice(savings.saved)} d&apos;économie par an par rapport au forfait mensuel (−{savings.percent} %).
             </p>
           </section>
         )}
@@ -153,8 +155,13 @@ export function SubscriptionPage() {
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg/95 px-4 pt-3 pb-[calc(12px+var(--safe-bottom))] backdrop-blur-md lg:static lg:border-0 lg:bg-transparent lg:p-0">
         <div className="mx-auto max-w-xl">
           {error && <p className="mb-2 text-sm text-accent">{error}</p>}
-          {payButton(plan, `Payer ${formatPrice(PLANS[plan].amount)}${plan === "annual" ? " pour 1 an" : " / mois"}`)}
-          {mode === "demo" && <p className="mt-2 text-center text-xs text-muted">Mode démo : aucun paiement réel.</p>}
+          {payButton(plan, TRIAL_LABEL ? `Commencer — ${TRIAL_LABEL}` : `Payer ${formatPrice(PLANS[plan].amount)}${plan === "annual" ? " pour 1 an" : " / mois"}`)}
+          {TRIAL_LABEL && (
+            <p className="mt-2 text-center text-sm">
+              puis <strong>{formatPrice(PLANS[plan].amount)}</strong> / {PLANS[plan].per}
+            </p>
+          )}
+          <p className="mt-2 text-center text-xs text-muted">Espace pro de démonstration : aucun paiement réel ici.</p>
         </div>
       </div>
       <DemoPaymentSheet plan={demoPlan} onClose={cancelDemo} onConfirm={onConfirmDemo} />

@@ -45,27 +45,31 @@ function priceParams(plan: PlanId, prefix: string): Record<string, string | numb
   };
 }
 
-export async function createCheckoutSession(opts: { plan: PlanId; email?: string; artistId: string; origin: string }) {
+export async function createCheckoutSession(opts: { plan: PlanId; email?: string; reference: string; signupId?: number; origin: string; successPath: string; cancelPath: string; trialDays: number }) {
   return stripe<{ id: string; url: string }>("POST", "/checkout/sessions", {
     mode: "subscription",
     locale: "fr",
     ...priceParams(opts.plan, "line_items[0]"),
     "line_items[0][quantity]": 1,
     customer_email: opts.email || undefined,
-    client_reference_id: opts.artistId,
+    client_reference_id: opts.reference,
     "metadata[plan]": opts.plan,
+    "metadata[signup_id]": opts.signupId,
     "subscription_data[metadata][plan]": opts.plan,
-    "subscription_data[metadata][artist_id]": opts.artistId,
+    "subscription_data[metadata][signup_id]": opts.signupId,
+    "subscription_data[trial_period_days]": opts.trialDays > 0 ? opts.trialDays : undefined,
     allow_promotion_codes: "true",
-    success_url: `${opts.origin}/pro/abonnement/confirmation?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${opts.origin}/pro/abonnement?annule=1`,
+    success_url: `${opts.origin}${opts.successPath}${opts.successPath.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${opts.origin}${opts.cancelPath}`,
   });
 }
 
-interface StripeSubscription {
+export interface StripeSubscription {
   id: string;
   status: string;
   current_period_end?: number;
+  trial_end?: number | null;
+  cancel_at_period_end?: boolean;
   items: { data: { id: string; current_period_end?: number; price: { id: string; product: string; recurring?: { interval: string } } }[] };
   metadata?: Record<string, string>;
 }
@@ -107,6 +111,22 @@ export async function upgradeToAnnual(subscriptionId: string) {
 export function periodEnd(sub: StripeSubscription): number | undefined {
   return sub.current_period_end ?? sub.items.data[0]?.current_period_end;
 }
+
+const isoDay = (unix: number | null | undefined) => (unix ? new Date(unix * 1000).toISOString().slice(0, 10) : null);
+
+/** Résumé d'un abonnement Stripe pour l'interface. */
+export function summarize(sub: StripeSubscription) {
+  const interval = sub.items.data[0]?.price.recurring?.interval;
+  return {
+    plan: (interval === "year" ? "annual" : "monthly") as PlanId,
+    status: sub.status,
+    renewsAt: isoDay(periodEnd(sub)),
+    trialEndsAt: sub.status === "trialing" ? isoDay(sub.trial_end) : null,
+    cancelAtPeriodEnd: Boolean(sub.cancel_at_period_end),
+  };
+}
+
+export const subscriptionCookieOptions = { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/", maxAge: 60 * 60 * 24 * 400 };
 
 /** Cookie httpOnly qui relie le navigateur à son abonnement Stripe (pas d'identifiant manipulable côté client). */
 export const SUBSCRIPTION_COOKIE = "ft_sub";

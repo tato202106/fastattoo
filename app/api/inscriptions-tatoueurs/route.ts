@@ -17,6 +17,7 @@ export async function POST(req: Request) {
   if (!process.env.DATABASE_URL) return Response.json({ error: "Inscriptions indisponibles pour le moment." }, { status: 503 });
 
   const s = parsed.value;
+  let signupId: number | null = null;
   try {
     const sql = neon(process.env.DATABASE_URL);
     await sql`CREATE TABLE IF NOT EXISTS artist_signups (
@@ -35,11 +36,14 @@ export async function POST(req: Request) {
       consent boolean NOT NULL
     )`;
     await sql`ALTER TABLE artist_signups ADD COLUMN IF NOT EXISTS referrer text`;
-    await sql`INSERT INTO artist_signups (name, studio, address, city, email, phone, instagram, styles, price_from, message, consent, referrer)
-      VALUES (${s.name}, ${s.studio}, ${s.address}, ${s.city}, ${s.email}, ${s.phone}, ${s.instagram}, ${s.styles}, ${s.priceFrom}, ${s.message}, ${s.consent}, ${s.referrer})`;
+    const rows = (await sql`INSERT INTO artist_signups (name, studio, address, city, email, phone, instagram, styles, price_from, message, consent, referrer)
+      VALUES (${s.name}, ${s.studio}, ${s.address}, ${s.city}, ${s.email}, ${s.phone}, ${s.instagram}, ${s.styles}, ${s.priceFrom}, ${s.message}, ${s.consent}, ${s.referrer})
+      RETURNING id`) as { id: number }[];
+    signupId = rows[0]?.id ?? null;
   } catch {
     return Response.json({ error: "Impossible d'enregistrer ton inscription. Réessaie dans un instant." }, { status: 500 });
   }
   await notifySignup(s);
-  return Response.json({ ok: true });
+  // L'identifiant relie ensuite le paiement (Stripe) à cette inscription.
+  return Response.json({ ok: true, signupId });
 }

@@ -1,7 +1,9 @@
+import { PRO_FREE_MONTHS, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "../pro-offer";
+
 /**
  * Forfaits tatoueur (Phase 6 — monétisation).
- * Montants en centimes. Le forfait annuel (179 €) est mis en avant ; le
- * mensuel sert de point de comparaison et d'entrée.
+ * Les prix se règlent dans lib/pro-offer.ts. Montants en centimes ici.
+ * Le forfait annuel est mis en avant ; le mensuel sert de point de comparaison.
  */
 export type PlanId = "monthly" | "annual";
 
@@ -16,11 +18,24 @@ export interface Plan {
 }
 
 export const PLANS: Record<PlanId, Plan> = {
-  monthly: { id: "monthly", name: "Mensuel", amount: 1990, interval: "month", per: "mois" },
-  annual: { id: "annual", name: "Annuel", amount: 17900, interval: "year", per: "an" },
+  monthly: { id: "monthly", name: "Mensuel", amount: Math.round(PRO_PRICE_MONTHLY * 100), interval: "month", per: "mois" },
+  annual: { id: "annual", name: "Annuel", amount: Math.round(PRO_PRICE_ANNUAL * 100), interval: "year", per: "an" },
 };
 
 export const CURRENCY = "eur";
+
+/** Période d'essai à la première souscription (offre de lancement). */
+export const TRIAL_MONTHS = PRO_FREE_MONTHS;
+export const TRIAL_DAYS = TRIAL_MONTHS * 30;
+export const TRIAL_LABEL = TRIAL_MONTHS > 0 ? `${TRIAL_MONTHS} mois offert${TRIAL_MONTHS > 1 ? "s" : ""}` : "";
+
+/** Date du premier prélèvement (fin de l'essai) à partir d'aujourd'hui. */
+export function firstChargeDate(todayISO: string): string {
+  if (TRIAL_MONTHS <= 0) return todayISO;
+  const [y, m, d] = todayISO.split("-").map(Number) as [number, number, number];
+  const date = new Date(y, m - 1 + TRIAL_MONTHS, d);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
 
 /** Ce que le forfait inclut (fonctionnalités réellement disponibles dans l'app). */
 export const PLAN_FEATURES = [

@@ -68,7 +68,7 @@ Voir [`.env.example`](.env.example).
 | `NEXT_PUBLIC_MAP_STYLE_URL` | *(vide)* | Style MapLibre (URL JSON). Vide = fond clair CARTO Positron (raster gratuit, attribution OSM/CARTO affichée) |
 | `UPLOAD_DIR` | `.data/uploads` | Dossier du stockage disque des images uploadées |
 | `STRIPE_SECRET_KEY` | *(vide)* | Clé secrète Stripe. Vide = paiement en mode démo |
-| `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_ANNUAL` | *(vide)* | Identifiants de prix Stripe (sinon prix créés à la volée : 19,90 € / 179 €) |
+| `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_ANNUAL` | *(vide)* | Identifiants de prix Stripe (sinon prix créés à la volée depuis `lib/pro-offer.ts`) |
 | `NEXT_PUBLIC_SITE_URL` | `https://fastattoo.com` | URL publique (sitemap, robots) |
 
 ## Structure
@@ -81,7 +81,8 @@ app/                    Routes (App Router)
   messages/             Liste et fil de discussion
   favoris/ profil/ connexion/ notifications/ offline/
   pro/                  Espace tatoueur : dashboard, demandes, calendrier, portfolio, onboarding, abonnement
-  api/billing/          config, checkout, verify, upgrade (Stripe)
+  api/billing/          config, checkout, verify, subscription, upgrade (Stripe)
+  mon-abonnement/       Abonnement du tatoueur (slides pour passer à l'annuel)
   api/artists/          search, suggest, cards, [slug]
   api/uploads/          Upload d'images (normalisation sharp)
   media/                Variantes d'images (art de démo, avatars, uploads)
@@ -117,7 +118,7 @@ tests/unit, tests/e2e   Vitest, Playwright
 | Demandes, messagerie, rendez-vous, calendrier, favoris, avis laissés, notifications | **Simulés côté client** (localStorage) : un seul appareil, pas de temps réel entre deux utilisateurs |
 | Statistiques tatoueur | « Vues du profil » = valeur de démo ; demandes et taux de réponse calculés |
 | Notifications push | Architecture prête (canaux + `push` dans le SW) ; pas d'envoi serveur |
-| Abonnement tatoueur (19,90 €/mois ou 179 €/an) | Paiement **réel via Stripe Checkout** si `STRIPE_SECRET_KEY` est défini ; sinon **mode démo** (aucun encaissement). L'état d'abonnement est gardé sur l'appareil (pas encore de base de données) |
+| Abonnement tatoueur (179 €/an ou 19 €/mois, 1 mois offert) | **Réel via Stripe Checkout** à l'inscription (`/devenir-tatoueur/inscription`) si `STRIPE_SECRET_KEY` est défini, enregistré dans Neon ; slides + passage à l'annuel sur `/mon-abonnement`. L'espace pro `/pro` reste une démo (aucun encaissement) |
 | Mise en avant, commission (reste de la Phase 6) | Non implémentés — point d'extension `Artist.promoted` |
 
 ## Qualité

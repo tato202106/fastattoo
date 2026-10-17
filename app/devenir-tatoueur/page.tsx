@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buttonClass } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
-import { PRO_FREE_LABEL, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL } from "@/lib/pro-offer";
+import { annualSavings, formatPrice } from "@/lib/billing/plans";
+import { PRO_FREE_LABEL, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL } from "@/lib/pro-offer";
 import { SPONSOR_BOOST_MONTHS } from "@/lib/referral";
 
 export const metadata: Metadata = {
   title: "Tatoueurs : rejoins Fastattoo",
-  description: `Sois visible auprès des personnes qui cherchent un tatoueur près de chez elles. ${PRO_FREE_LABEL}, puis ${PRO_PRICE_MONTHLY} € par mois sans engagement.`,
+  description: `Sois visible auprès des personnes qui cherchent un tatoueur près de chez elles. ${PRO_FREE_LABEL}, puis ${PRO_PRICE_ANNUAL} € par an ou ${PRO_PRICE_MONTHLY} € par mois.`,
 };
 
 const BENEFITS: { icon: IconName; title: string; text: string }[] = [
@@ -19,9 +20,12 @@ const BENEFITS: { icon: IconName; title: string; text: string }[] = [
 
 const STEPS = [
   "Remplis le formulaire d'inscription (2 minutes).",
+  "Choisis ton forfait et active-le avec le paiement sécurisé.",
   "On crée ton profil avec toi : photos, styles, prix, adresse du studio.",
   "Tu reçois tes premières demandes de projets.",
 ];
+
+const savings = annualSavings();
 
 function SignupButton({ className }: { className?: string }) {
   if (!PRO_SIGNUP_URL) {
@@ -108,19 +112,36 @@ export default function BecomeArtistPage() {
         <p className="mt-3 text-sm text-muted">Pas de limite : chaque nouveau filleul abonné prolonge ta mise en avant.</p>
       </section>
 
-      <section aria-labelledby="tarif" className="mt-10 rounded-[var(--radius-card)] border-2 border-accent bg-surface p-5">
+      <section aria-labelledby="tarif" className="mt-10">
         <h2 id="tarif" className="text-xl font-semibold">
-          Un seul abonnement, simple
+          Deux forfaits, sans surprise
         </h2>
-        <p className="mt-3">
-          <span className="text-4xl font-bold">{PRO_PRICE_MONTHLY} €</span>
-          <span className="text-muted"> / mois</span>
-        </p>
-        <p className="mt-2 inline-flex rounded-full bg-accent-soft px-3 py-1 text-sm font-semibold text-accent">
-          {PRO_FREE_LABEL} pour les premiers inscrits
-        </p>
+        <p className="mt-2 inline-flex rounded-full bg-accent-soft px-3 py-1 text-sm font-semibold text-accent">{PRO_FREE_LABEL} pour les premiers inscrits</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="relative rounded-[var(--radius-card)] border-2 border-accent bg-surface p-5">
+            <span className="absolute -top-3 left-5 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-accent-fg">
+              Recommandé · −{savings.percent} %
+            </span>
+            <p className="font-semibold">Annuel</p>
+            <p className="mt-1">
+              <span className="text-4xl font-bold">{PRO_PRICE_ANNUAL} €</span>
+              <span className="text-muted"> / an</span>
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              Soit {formatPrice(savings.perMonth)} par mois · {formatPrice(savings.saved)} d&apos;économie par an
+            </p>
+          </div>
+          <div className="rounded-[var(--radius-card)] border border-border bg-surface p-5">
+            <p className="font-semibold">Mensuel</p>
+            <p className="mt-1">
+              <span className="text-4xl font-bold">{PRO_PRICE_MONTHLY} €</span>
+              <span className="text-muted"> / mois</span>
+            </p>
+            <p className="mt-1 text-sm text-muted">Sans engagement</p>
+          </div>
+        </div>
         <ul className="mt-4 space-y-2 text-[15px]">
-          {["Sans engagement, résiliable à tout moment", "Profil et portfolio mis en avant sur la carte", "Demandes, messages et agenda inclus"].map((t) => (
+          {["Résiliable à tout moment", "Profil et portfolio mis en avant sur la carte", "Demandes, messages et agenda inclus", "Paiement sécurisé par Stripe"].map((t) => (
             <li key={t} className="flex items-start gap-2">
               <Icon name="check" size={18} className="mt-0.5 shrink-0 text-success" />
               {t}
@@ -128,6 +149,12 @@ export default function BecomeArtistPage() {
           ))}
         </ul>
         <SignupButton className="mt-5 w-full" />
+        <p className="mt-3 text-center text-sm">
+          Déjà abonné·e ?{" "}
+          <Link href="/mon-abonnement" className="font-semibold text-accent underline underline-offset-4">
+            Mon abonnement
+          </Link>
+        </p>
       </section>
 
       <p className="mt-6 text-center text-sm text-muted">Une question ? Pose-la directement dans le formulaire d&apos;inscription, on te répond personnellement.</p>

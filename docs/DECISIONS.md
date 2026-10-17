@@ -101,11 +101,16 @@ Limites connues :
 
 ## Monétisation (Phase 6) — abonnement tatoueur
 
-- **Deux forfaits** : annuel **179 €/an** (mis en avant, présélectionné) et mensuel **19,90 €/mois**. Le prix mensuel n'était pas fixé par la demande : choisi pour que l'annuel représente −25 % (3 mois offerts, 14,92 €/mois). Modifiable dans `lib/billing/plans.ts`.
-- **Paiement à l'inscription** : connexion → profil pro (onboarding) → page d'abonnement → dashboard. Tant qu'il n'y a pas d'abonnement, toutes les pages `/pro` redirigent vers `/pro/abonnement` (sauf l'onboarding).
-- **Abonnés au mensuel** : des slides « passe à l'annuel » (3 slides : prix, 3 mois offerts, un seul paiement) s'ouvrent dans un sheet sur le dashboard au plus une fois par semaine (« Plus tard » repousse de 7 jours). Elles restent aussi en permanence dans le dashboard, avec un bouton vers `/pro/abonnement?plan=annual`.
-- **Slides** : swipe horizontal, points de navigation, défilement automatique toutes les 4,5 s, mis en pause au toucher et désactivé si l'utilisateur réduit les animations. Uniquement des faits vérifiables (prix et économies calculés), pas de promesse non tenue.
-- **Paiement réel = Stripe Checkout** (page hébergée par Stripe : carte, Apple Pay, Google Pay). Aucune donnée de carte ne passe par l'application. Le paiement est **vérifié côté serveur** (`/api/billing/verify`) avant activation. L'identifiant d'abonnement Stripe est gardé dans un cookie httpOnly, et le passage à l'annuel modifie l'abonnement existant avec prorata, sans double abonnement.
-- **Mode démo** (pas de `STRIPE_SECRET_KEY`) : récapitulatif + confirmation explicitement marqués « Mode démonstration ». Volontairement aucun faux champ de carte.
-- **Limites avant production** : pas encore de comptes ni de base de données. L'état d'abonnement est gardé sur l'appareil et l'upgrade est relié au navigateur par cookie. Il faudra brancher l'authentification, enregistrer l'abonnement en base et ajouter un webhook Stripe (renouvellements, échecs de paiement, résiliation), ainsi qu'un lien vers le portail client Stripe pour gérer et résilier.
-- Reste de la Phase 6 non implémenté : mise en avant (`Artist.promoted`), commission sur réservation.
+- **Prix** (réglables dans `lib/pro-offer.ts`) : annuel **179 €/an** (mis en avant, présélectionné) et mensuel **19 €/mois** (le prix déjà affiché sur le site). L'annuel revient à 14,92 €/mois, soit 49 € d'économie (−21 %).
+- **Offre de lancement** : le site promettait déjà « 1 mois offert pour les premiers inscrits ». Elle devient une **période d'essai Stripe** (`PRO_FREE_MONTHS`). Le moyen de paiement est enregistré à l'inscription et le premier prélèvement a lieu à la fin du mois offert. Mettre `PRO_FREE_MONTHS = 0` pour un paiement immédiat.
+- **Paiement à l'inscription (réel)** : `/devenir-tatoueur/inscription` → formulaire (enregistré dans Neon) → **choix du forfait** → **Stripe Checkout** → `/devenir-tatoueur/inscription/confirmation`. Le paiement est **vérifié côté serveur**, puis enregistré sur l'inscription (`artist_signups.plan`, `subscription_status`, `stripe_subscription_id`…). Sans `STRIPE_SECRET_KEY`, l'inscription est enregistrée sans paiement et le message l'indique honnêtement (aucun faux paiement).
+- **Abonnés au mensuel → slides pour passer à l'annuel** :
+  - après le paiement (page de confirmation) et sur **`/mon-abonnement`** (abonnement relié au navigateur par un cookie httpOnly posé après paiement vérifié) : slides + « Passer à l'annuel — 179 € ». Stripe modifie l'abonnement existant avec prorata, sans double abonnement ;
+  - dans l'espace pro de démo (`/pro`) : sheet de slides à l'ouverture du dashboard (au plus une fois par semaine, « Plus tard » repousse de 7 jours) + carte de slides permanente.
+- **Slides** : swipe horizontal, points de navigation, défilement automatique toutes les 4,5 s, mis en pause au toucher et désactivé si l'utilisateur réduit les animations. Uniquement des faits calculés (prix, économies).
+- **Espace pro `/pro`** : verrouillé tant qu'il n'y a pas d'abonnement (redirection vers `/pro/abonnement`, sauf l'onboarding). Comme il n'y a pas encore de vrais comptes, une nouvelle souscription y reste **en démonstration**, sans encaissement. Le passage à l'annuel y devient réel si le navigateur est relié à un vrai abonnement.
+- **Aucune donnée de carte dans l'application** : saisie uniquement sur Stripe Checkout (carte, Apple Pay, Google Pay).
+- **Limites avant production** :
+  - Pas encore de comptes tatoueurs : `/mon-abonnement` ne fonctionne que sur l'appareil qui a payé.
+  - À ajouter : un webhook Stripe (renouvellements, échecs de paiement, résiliation → mise à jour de `artist_signups`) et un lien vers le portail client Stripe pour gérer ou résilier.
+- Reste de la Phase 6 : la mise en avant « Parrain » existe déjà (lib/referral.ts) ; la commission sur réservation n'est pas implémentée.

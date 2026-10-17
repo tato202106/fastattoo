@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
-import { periodEnd, stripeEnabled, SUBSCRIPTION_COOKIE, upgradeToAnnual } from "@/lib/billing/stripe";
+import { recordSignupSubscription } from "@/lib/billing/signups-db";
+import { stripeEnabled, SUBSCRIPTION_COOKIE, summarize, upgradeToAnnual } from "@/lib/billing/stripe";
 
 /**
  * Passage au forfait annuel de l'abonnement du navigateur (cookie httpOnly posé
@@ -11,8 +12,10 @@ export async function POST() {
   if (!subId || !/^sub_[A-Za-z0-9]+$/.test(subId)) return Response.json({ error: "Aucun abonnement associé à cet appareil" }, { status: 404 });
   try {
     const sub = await upgradeToAnnual(subId);
-    const end = periodEnd(sub);
-    return Response.json({ plan: "annual", renewsAt: end ? new Date(end * 1000).toISOString().slice(0, 10) : null });
+    const summary = summarize(sub);
+    const signupId = Number(sub.metadata?.signup_id);
+    if (signupId) await recordSignupSubscription(signupId, { plan: "annual", status: sub.status, subscriptionId: sub.id });
+    return Response.json({ ...summary, plan: "annual" });
   } catch (e) {
     return Response.json({ error: (e as Error).message }, { status: 502 });
   }

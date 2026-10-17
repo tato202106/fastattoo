@@ -19,6 +19,8 @@ export default defineConfig({
     locale: "fr-FR",
     timezoneId: "Europe/Paris",
     trace: "retain-on-failure",
+    // Le service worker (PWA) relaie les appels réseau : on le bloque pour que les simulations d'API s'appliquent.
+    serviceWorkers: "block",
     launchOptions: {
       ...(executablePath ? { executablePath } : {}),
       args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],

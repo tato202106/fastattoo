@@ -6,7 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { buttonClass } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { PRO_FREE_LABEL, PRO_PRICE_MONTHLY } from "@/lib/pro-offer";
+import { SignupPayment } from "@/components/billing/SignupPayment";
+import { PRO_FREE_LABEL, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "@/lib/pro-offer";
 import type { ArtistSignup } from "@/lib/signup";
 import { STYLES } from "@/lib/styles";
 import type { StyleSlug } from "@/lib/types";
@@ -28,8 +29,20 @@ function Field({ label, error, optional, children }: { label: string; error?: st
   );
 }
 
+const PENDING_KEY = "fastattoo-signup-pending";
+
 export function SignupForm() {
-  const referrerParam = useSearchParams().get("parrain") ?? "";
+  const params = useSearchParams();
+  const referrerParam = params.get("parrain") ?? "";
+  // Retour de Stripe sans paiement : on revient directement à l'étape de paiement.
+  const [pending, setPending] = useState<{ signupId: number | null; email: string } | null>(() => {
+    if (typeof window === "undefined" || params.get("paiement") !== "annule") return null;
+    try {
+      return JSON.parse(sessionStorage.getItem(PENDING_KEY) ?? "null") as { signupId: number | null; email: string } | null;
+    } catch {
+      return null;
+    }
+  });
   const [styles, setStyles] = useState<StyleSlug[]>([]);
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
@@ -44,8 +57,15 @@ export function SignupForm() {
     setErrors({});
     try {
       const res = await fetch("/api/inscriptions-tatoueurs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      const data = (await res.json().catch(() => ({}))) as { errors?: Errors; error?: string };
+      const data = (await res.json().catch(() => ({}))) as { errors?: Errors; error?: string; signupId?: number | null };
       if (res.ok) {
+        const next = { signupId: data.signupId ?? null, email: String(fd.get("email") ?? "") };
+        try {
+          sessionStorage.setItem(PENDING_KEY, JSON.stringify(next));
+        } catch {
+          /* stockage indisponible */
+        }
+        setPending(next);
         setStatus("done");
         window.scrollTo({ top: 0 });
         return;
@@ -59,19 +79,9 @@ export function SignupForm() {
     }
   }
 
-  if (status === "done") {
-    return (
-      <div className="pt-10 text-center">
-        <span className="mx-auto inline-flex size-16 items-center justify-center rounded-full bg-success/12 text-success">
-          <Icon name="check" size={32} />
-        </span>
-        <h1 className="mt-4 font-display text-[28px] leading-tight font-bold">Merci, c&apos;est noté !</h1>
-        <p className="mt-2 text-muted">On te recontacte très vite par e-mail pour créer ton profil ensemble.</p>
-        <Link href="/" className={buttonClass("outline", "lg", "mt-6 w-full max-w-xs")}>
-          Retour à l&apos;accueil
-        </Link>
-      </div>
-    );
+  // Inscription enregistrée → paiement (étape 2).
+  if (pending || status === "done") {
+    return <SignupPayment signupId={pending?.signupId ?? null} email={pending?.email ?? ""} cancelled={params.get("paiement") === "annule"} />;
   }
 
   return (
@@ -81,7 +91,7 @@ export function SignupForm() {
       </Link>
       <h1 className="mt-1 font-display text-[28px] leading-tight font-bold">Inscris-toi sur Fastattoo</h1>
       <p className="mt-2 text-[15px] text-muted">
-        {PRO_FREE_LABEL}, puis {PRO_PRICE_MONTHLY} € par mois sans engagement. Rien à payer aujourd&apos;hui : on te recontacte pour créer ton profil.
+        {PRO_FREE_LABEL}, puis {PRO_PRICE_ANNUAL} € par an (ou {PRO_PRICE_MONTHLY} € par mois). Étape 1 : tes infos, étape 2 : le paiement sécurisé.
       </p>
 
       <div className="mt-6 space-y-4">

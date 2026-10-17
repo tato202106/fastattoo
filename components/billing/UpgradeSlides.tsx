@@ -16,8 +16,8 @@ export const UPGRADE_SLIDES = [
   },
   {
     kicker: `−${s.percent} %`,
-    title: `${s.freeMonths} mois offerts`,
-    text: `Soit ${formatPrice(s.perMonth)} par mois au lieu de ${formatPrice(PLANS.monthly.amount)}. ${formatPrice(s.saved)} d'économie par an.`,
+    title: `${formatPrice(s.saved)} d'économie`,
+    text: `Soit ${formatPrice(s.perMonth)} par mois au lieu de ${formatPrice(PLANS.monthly.amount)}${s.freeMonths >= 1 ? ` : plus de ${s.freeMonths} mois offert${s.freeMonths > 1 ? "s" : ""}` : ""}.`,
     tone: "bg-accent text-accent-fg",
   },
   {
