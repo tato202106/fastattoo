@@ -1,10 +1,14 @@
 import { neon } from "@neondatabase/serverless";
+import { createAccount, EmailTakenError, findAccountByEmail } from "@/lib/accounts/db";
+import { signIn } from "@/lib/accounts/session";
+import { hashPassword, passwordError } from "@/lib/auth/password";
 import { parseSignup } from "@/lib/signup";
 import { notifySignup } from "@/lib/signup-notify";
 
 /**
  * Enregistre une demande d'inscription tatoueur dans Neon (table artist_signups,
  * créée automatiquement). Consultable dans la console Neon → Tables.
+ * Crée aussi le compte tatoueur (e-mail + mot de passe) et le connecte.
  */
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -13,10 +17,20 @@ export async function POST(req: Request) {
   if (typeof body.website === "string" && body.website) return Response.json({ ok: true });
 
   const parsed = parseSignup(body);
-  if (!parsed.ok) return Response.json({ errors: parsed.errors }, { status: 422 });
+  const pwError = passwordError(body.password);
+  if (!parsed.ok || pwError) {
+    return Response.json({ errors: { ...(parsed.ok ? {} : parsed.errors), ...(pwError ? { password: pwError } : {}) } }, { status: 422 });
+  }
   if (!process.env.DATABASE_URL) return Response.json({ error: "Inscriptions indisponibles pour le moment." }, { status: 503 });
 
   const s = parsed.value;
+  try {
+    if (await findAccountByEmail(s.email)) {
+      return Response.json({ errors: { email: "Un compte existe déjà avec cet e-mail. Connecte-toi à ton espace tatoueur." }, existingAccount: true }, { status: 409 });
+    }
+  } catch {
+    return Response.json({ error: "Impossible d'enregistrer ton inscription. Réessaie dans un instant." }, { status: 500 });
+  }
   let signupId: number | null = null;
   try {
     const sql = neon(process.env.DATABASE_URL);
@@ -42,6 +56,27 @@ export async function POST(req: Request) {
     signupId = rows[0]?.id ?? null;
   } catch {
     return Response.json({ error: "Impossible d'enregistrer ton inscription. Réessaie dans un instant." }, { status: 500 });
+  }
+  try {
+    const accountId = await createAccount({
+      email: s.email,
+      passwordHash: hashPassword(String(body.password)),
+      signupId,
+      name: s.name,
+      studio: s.studio,
+      address: s.address,
+      city: s.city,
+      styles: s.styles,
+      priceFrom: s.priceFrom,
+      instagram: s.instagram,
+    });
+    await signIn(accountId);
+  } catch (e) {
+    if (e instanceof EmailTakenError) {
+      return Response.json({ errors: { email: "Un compte existe déjà avec cet e-mail. Connecte-toi à ton espace tatoueur." }, existingAccount: true }, { status: 409 });
+    }
+    console.error("[inscription] création du compte impossible :", e);
+    return Response.json({ error: "Impossible de créer ton compte. Réessaie dans un instant." }, { status: 500 });
   }
   await notifySignup(s);
   // L'identifiant relie ensuite le paiement (Stripe) à cette inscription.

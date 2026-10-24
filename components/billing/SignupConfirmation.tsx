@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { buttonClass } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
@@ -26,6 +26,7 @@ const ENDED = new Set(["canceled", "incomplete_expired"]);
 /** Retour de Stripe après l'inscription : vérification serveur, puis proposition de l'annuel aux abonnés mensuels. */
 export function SignupConfirmation() {
   const params = useSearchParams();
+  const router = useRouter();
   const [state, setState] = useState<"checking" | "failed" | Verified>("checking");
   const started = useRef(false);
 
@@ -34,17 +35,22 @@ export function SignupConfirmation() {
     started.current = true;
     fetch(`/api/billing/verify?session_id=${encodeURIComponent(params.get("session_id") ?? "")}`)
       .then(async (r) => {
-        const data = (await r.json()) as { paid?: boolean } & Verified;
+        const data = (await r.json()) as { paid?: boolean; account?: boolean } & Verified;
         if (!r.ok || !data.paid) throw new Error();
         try {
           sessionStorage.removeItem("fastattoo-signup-pending");
         } catch {
           /* ignore */
         }
+        // Compte tatoueur connecté : direction son espace pour compléter son profil.
+        if (data.account) {
+          router.replace("/espace-tatoueur?bienvenue=1");
+          return;
+        }
         setState({ plan: data.plan, renewsAt: data.renewsAt, trialEndsAt: data.trialEndsAt });
       })
       .catch(() => setState("failed"));
-  }, [params]);
+  }, [params, router]);
 
   if (state === "checking") {
     return (
@@ -69,7 +75,7 @@ export function SignupConfirmation() {
 }
 
 /** Récapitulatif d'un abonnement réel + slides vers l'annuel s'il est mensuel. */
-export function SubscribedView({ initial, welcome }: { initial: Verified; welcome?: boolean }) {
+export function SubscribedView({ initial, welcome, returnTo }: { initial: Verified; welcome?: boolean; returnTo?: "espace" }) {
   const [sub, setSub] = useState(initial);
   const p = PLANS[sub.plan];
   return (
@@ -103,7 +109,7 @@ export function SubscribedView({ initial, welcome }: { initial: Verified; welcom
           Ton dernier paiement n&apos;est pas passé. Mets à jour ton moyen de paiement pour que ton abonnement continue.
         </p>
       )}
-      {!welcome && <ManageSubscription />}
+      {!welcome && <ManageSubscription returnTo={returnTo} />}
       {sub.status && ENDED.has(sub.status) ? null : sub.plan === "monthly" ? (
         <RealUpgrade onUpgraded={(renewsAt) => setSub({ ...sub, plan: "annual", renewsAt })} />
       ) : (

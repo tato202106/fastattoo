@@ -70,6 +70,7 @@ Voir [`.env.example`](.env.example).
 | `STRIPE_SECRET_KEY` | *(vide)* | Clé secrète Stripe. Vide = paiement en mode démo |
 | `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_ANNUAL` | *(vide)* | Identifiants de prix Stripe (sinon prix créés à la volée depuis `lib/pro-offer.ts`) |
 | `STRIPE_WEBHOOK_SECRET` | *(vide)* | Secret de signature du webhook Stripe (`/api/billing/webhook`). Vide = webhook désactivé |
+| `ADMIN_PASSWORD` | *(vide)* | Mot de passe de la page `/admin` (validation des profils tatoueurs). Vide = page désactivée |
 | `NEXT_PUBLIC_SITE_URL` | `https://fastattoo.com` | URL publique (sitemap, robots) |
 
 ## Structure

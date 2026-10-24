@@ -1,3 +1,4 @@
+import { updateAccountSubscription } from "@/lib/accounts/db";
 import { applySubscriptionUpdate } from "@/lib/billing/signups-db";
 import { retrieveSubscription, stripeEnabled } from "@/lib/billing/stripe";
 import { INVOICE_EVENTS, invoiceSubscriptionId, SUBSCRIPTION_EVENTS, toSubscriptionUpdate, verifySignature, type WebhookSubscription } from "@/lib/billing/webhook";
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
     }
     if (sub) {
       const updated = await applySubscriptionUpdate(toSubscriptionUpdate(sub));
+      await updateAccountSubscription(sub.id, sub.status);
       console.info(`[stripe] ${type} ${sub.id} → ${sub.status} (${updated} inscription(s) mise(s) à jour)`);
     }
     return Response.json({ received: true });

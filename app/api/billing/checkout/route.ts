@@ -1,3 +1,4 @@
+import { currentAccount } from "@/lib/accounts/session";
 import { isPlanId, TRIAL_DAYS } from "@/lib/billing/plans";
 import { createCheckoutSession, stripeEnabled } from "@/lib/billing/stripe";
 
@@ -10,7 +11,10 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as { plan?: unknown; email?: unknown; signupId?: unknown } | null;
   if (!body || !isPlanId(body.plan)) return Response.json({ error: "Forfait invalide" }, { status: 400 });
   const email = typeof body.email === "string" && /\S+@\S+\.\S+/.test(body.email) ? body.email.slice(0, 200) : undefined;
-  const signupId = typeof body.signupId === "number" && Number.isInteger(body.signupId) && body.signupId > 0 ? body.signupId : undefined;
+  // Tatoueur connecté : toujours son inscription (on ignore celle envoyée par le navigateur).
+  const account = await currentAccount();
+  const fromBody = typeof body.signupId === "number" && Number.isInteger(body.signupId) && body.signupId > 0 ? body.signupId : undefined;
+  const signupId = account ? (account.signupId ?? undefined) : fromBody;
   try {
     const session = await createCheckoutSession({
       plan: body.plan,

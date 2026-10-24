@@ -52,9 +52,14 @@ function SignupButton({ className }: { className?: string }) {
 export default function BecomeArtistPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 pt-safe pb-nav lg:pt-10 lg:pb-16">
-      <Link href="/" className="tap -ml-2 inline-flex h-11 items-center gap-1 px-2 text-sm text-muted lg:hidden">
-        <Icon name="back" size={18} /> Accueil
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/" className="tap -ml-2 inline-flex h-11 items-center gap-1 px-2 text-sm text-muted lg:invisible">
+          <Icon name="back" size={18} /> Accueil
+        </Link>
+        <Link href="/espace-tatoueur" className="tap inline-flex h-11 items-center gap-1.5 rounded-full border border-border px-4 text-sm font-medium">
+          <Icon name="user" size={16} /> Espace tatoueur
+        </Link>
+      </div>
 
       <section className="mt-2 lg:mt-0">
         <p className="text-sm font-semibold text-accent">Pour les tatoueurs et tatoueuses</p>

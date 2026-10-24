@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 
 /** Bouton vers le portail client Stripe (moyen de paiement, factures, résiliation). */
-export function ManageSubscription() {
+export function ManageSubscription({ returnTo }: { returnTo?: "espace" }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -13,7 +13,7 @@ export function ManageSubscription() {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/billing/portal", { method: "POST" });
+      const res = await fetch(`/api/billing/portal${returnTo ? `?retour=${returnTo}` : ""}`, { method: "POST" });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) throw new Error(data.error ?? "Impossible d'ouvrir la gestion de l'abonnement");
       window.location.href = data.url;

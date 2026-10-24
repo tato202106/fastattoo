@@ -57,6 +57,7 @@ test("inscription réelle : formulaire → choix du forfait (annuel par défaut)
   await page.getByLabel("Nom ou nom d'artiste").fill("Nora Ink");
   await page.getByLabel("Ville").fill("Nantes");
   await page.getByLabel("E-mail").fill("nora@example.com");
+  await page.getByLabel("Mot de passe").fill("encre-noire-2026");
   await page.getByRole("button", { name: "Fine Line" }).click();
   await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Envoyer mon inscription" }).click();
