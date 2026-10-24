@@ -39,6 +39,14 @@ export function PortfolioGallery({ artistId, items: serverItems }: { artistId: s
 
   const columns = splitMasonry(items.slice(0, visible), wide ? 3 : 2);
 
+  if (items.length === 0) {
+    return (
+      <p className="rounded-2xl bg-surface-2 p-4 text-[15px] text-muted">
+        Les premières réalisations arrivent bientôt. En attendant, envoie ta demande de projet : c&apos;est gratuit et sans engagement.
+      </p>
+    );
+  }
+
   return (
     <>
       <div className="flex gap-2">

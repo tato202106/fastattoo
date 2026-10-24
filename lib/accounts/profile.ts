@@ -12,8 +12,33 @@ import type { StyleSlug } from "../types";
 export const ARTIST_TITLES = ["Tatoueur", "Tatoueuse", "Artiste tatoueur·se"] as const;
 export type ArtistTitle = (typeof ARTIST_TITLES)[number];
 
-/** Statut du profil : brouillon → envoyé pour validation → publié sur le site. */
-export type ProfileStatus = "draft" | "submitted" | "published";
+/**
+ * Statut du profil : brouillon → publié sur le site dès que l'abonnement est
+ * actif. « submitted » : ancien envoi pour validation manuelle (comptes
+ * existants) ; « hidden » : retiré du site par l'équipe (modération), il n'est
+ * plus republié automatiquement.
+ */
+export type ProfileStatus = "draft" | "submitted" | "published" | "hidden";
+
+/** Statuts d'abonnement Stripe terminés : le profil quitte la carte. */
+const ENDED_SUBSCRIPTION = new Set(["canceled", "unpaid", "incomplete_expired", "paused"]);
+
+export function subscriptionEnded(status: string | null | undefined): boolean {
+  return !!status && ENDED_SUBSCRIPTION.has(status);
+}
+
+/**
+ * Publication automatique : un tatoueur abonné apparaît sur le site et sur la
+ * carte sans attendre de validation, même sans photo ni présentation. Seule la
+ * localisation est indispensable (position sur la carte).
+ */
+export function autoPublishDecision(a: { status: ProfileStatus; paid: boolean; lat: number | null; lng: number | null }):
+  | "publish"
+  | "needs-location"
+  | "skip" {
+  if (!a.paid || a.status === "published" || a.status === "hidden") return "skip";
+  return a.lat == null || a.lng == null ? "needs-location" : "publish";
+}
 
 export interface ProfileInput {
   name: string;
@@ -72,7 +97,7 @@ export function parseProfile(input: Record<string, unknown>): ProfileResult {
   return { ok: true, value: { name, title, studio, address, city, styles, priceFrom, hourlyRate, bio, instagram } };
 }
 
-/** Ce qui manque avant de pouvoir envoyer le profil pour validation. */
+/** Ce qui manque pour un profil complet (conseils affichés dans l'espace tatoueur). */
 export function missingForSubmission(p: Partial<ProfileInput> & { lat?: number | null; lng?: number | null }): string[] {
   const missing: string[] = [];
   if (!p.name) missing.push("ton nom");

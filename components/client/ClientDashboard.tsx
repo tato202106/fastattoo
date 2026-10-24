@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/ui/Icon";
 import { Picture } from "@/components/ui/Picture";
 import { formatTime, relativeDay } from "@/lib/dates";
-import { DEMO_PROFILES } from "@/lib/showcase";
+import { isDemoArtist, isNewArtist } from "@/lib/showcase";
 import { upcomingAppointments, useApp } from "@/lib/store/app";
 import { useHydrated } from "@/lib/store/hydration";
 import { requestStatusFor } from "@/lib/store/labels";
@@ -103,8 +103,10 @@ export function ClientDashboard() {
                   </div>
                   <p className="mt-1.5 truncate text-sm font-semibold">{a.name}</p>
                   <p className="flex items-center gap-1 truncate text-xs text-muted">
-                    {DEMO_PROFILES ? (
+                    {isDemoArtist(a) ? (
                       <>Exemple · {a.city}</>
+                    ) : isNewArtist(a) ? (
+                      <>Nouveau · {a.city}</>
                     ) : (
                       <>
                         <Icon name="star" size={12} className="text-star" /> {a.rating.toFixed(1).replace(".", ",")} · {a.city}

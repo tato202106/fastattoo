@@ -6,7 +6,7 @@ import { Picture } from "@/components/ui/Picture";
 import { Rating } from "@/components/ui/Rating";
 import { relativeDay } from "@/lib/dates";
 import { formatDistance } from "@/lib/geo";
-import { DEMO_BADGE_LABEL, DEMO_PROFILES } from "@/lib/showcase";
+import { DEMO_BADGE_LABEL, isDemoArtist, isNewArtist, priceFromLabel } from "@/lib/showcase";
 import { styleLabel } from "@/lib/styles";
 import type { ArtistCard as Card } from "@/lib/types";
 import { FavoriteButton } from "./FavoriteButton";
@@ -15,8 +15,10 @@ export function ArtistMeta({ artist, className, nowrap, hidePrice }: { artist: C
   const distance = formatDistance(artist.distanceKm);
   return (
     <p className={clsx("flex items-center gap-x-1.5 text-sm text-muted", nowrap ? "flex-nowrap overflow-hidden whitespace-nowrap" : "flex-wrap", className)}>
-      {DEMO_PROFILES ? (
+      {isDemoArtist(artist) ? (
         <DemoBadge />
+      ) : isNewArtist(artist) ? (
+        <span className="font-semibold text-accent">Nouveau</span>
       ) : (
         <Rating value={artist.rating} className="text-fg" />
       )}
@@ -25,7 +27,7 @@ export function ArtistMeta({ artist, className, nowrap, hidePrice }: { artist: C
       {!hidePrice && (
         <>
           <span aria-hidden>·</span>
-          <span>dès {artist.priceFrom} €</span>
+          <span>{priceFromLabel(artist.priceFrom)}</span>
         </>
       )}
     </p>
@@ -94,7 +96,7 @@ export function ArtistCard({
                 {artist.name}
               </Link>
             )}
-            {artist.verified && !DEMO_PROFILES && <Icon name="verified" size={16} className="shrink-0 text-accent" aria-label="Vérifié" />}
+            {artist.verified && !isDemoArtist(artist) && <Icon name="verified" size={16} className="shrink-0 text-accent" aria-label="Vérifié" />}
           </H>
           <ArtistMeta artist={artist} />
           {artist.sponsor && <SponsorBadge className="mt-1" />}
@@ -117,7 +119,7 @@ export function ArtistCard({
           ))}
         </div>
       )}
-      {artist.nextSlot && !DEMO_PROFILES && (
+      {artist.nextSlot && !isDemoArtist(artist) && (
         <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-success">
           <Icon name="clock" size={14} />
           Dispo {relativeDay(artist.nextSlot.date).toLowerCase()} à {artist.nextSlot.time.replace(":", "h")}
@@ -136,11 +138,11 @@ export function ArtistCompactCard({ artist, active }: { artist: Card; active?: b
         <div className="min-w-0 flex-1">
           <h2 className="flex items-center gap-1 text-[17px] font-semibold">
             <span className="truncate">{artist.name}</span>
-            {artist.verified && !DEMO_PROFILES && <Icon name="verified" size={16} className="shrink-0 text-accent" aria-label="Vérifiée" />}
+            {artist.verified && !isDemoArtist(artist) && <Icon name="verified" size={16} className="shrink-0 text-accent" aria-label="Vérifiée" />}
           </h2>
           <ArtistMeta artist={artist} nowrap hidePrice />
           <p className="truncate text-sm text-fg/80">
-            {artist.styles.map(styleLabel).join(" · ")} · dès {artist.priceFrom} €
+            {artist.styles.map(styleLabel).join(" · ")} · {priceFromLabel(artist.priceFrom)}
           </p>
         </div>
         <FavoriteButton artistId={artist.id} name={artist.name} className="relative z-10 -mr-1 self-start" />

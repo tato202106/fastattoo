@@ -1,15 +1,19 @@
 import "server-only";
 import { neon } from "@neondatabase/serverless";
 import { tokenHash } from "../auth/password";
-import type { StyleSlug } from "../types";
-import { toArtistRow, type ArtistTitle, type ProfileInput, type ProfileStatus } from "./profile";
+import { hasPaidAccess } from "../billing/access";
+import type { BodyZone, ImageAsset, PortfolioItem, StyleSlug } from "../types";
+import { geocode } from "./geocode";
+import { artistIdFor, autoPublishDecision, subscriptionEnded, toArtistRow, type ArtistTitle, type ProfileInput, type ProfileStatus } from "./profile";
 
 /**
  * Comptes tatoueurs dans Neon. Tables créées automatiquement au premier usage :
  * - artist_accounts : identifiants, profil (brouillon ou publié), abonnement Stripe ;
  * - artist_sessions : sessions de connexion (empreinte du jeton du cookie) ;
- * - password_resets : liens « mot de passe oublié » (empreinte, 1 h, usage unique).
- * À la validation, le profil est copié dans la table `artists` lue par le site.
+ * - password_resets : liens « mot de passe oublié » (empreinte, 1 h, usage unique) ;
+ * - account_photos : photos du portfolio ajoutées depuis l'espace tatoueur.
+ * À la publication (automatique dès que l'abonnement est actif), le profil et
+ * ses photos sont copiés dans les tables `artists` et `portfolio_items` lues par le site.
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,6 +74,19 @@ export function ensureAccountTables(): Promise<void> {
         created_at timestamptz NOT NULL DEFAULT now(),
         expires_at timestamptz NOT NULL,
         used_at timestamptz
+      )`;
+      await sql`CREATE TABLE IF NOT EXISTS account_photos (
+        id text PRIMARY KEY,
+        account_id integer NOT NULL REFERENCES artist_accounts(id) ON DELETE CASCADE,
+        position integer NOT NULL DEFAULT 0,
+        base text NOT NULL,
+        width integer NOT NULL,
+        height integer NOT NULL,
+        color text NOT NULL,
+        alt text NOT NULL DEFAULT '',
+        style text NOT NULL,
+        zone text NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now()
       )`;
     })();
     ready.catch(() => {
@@ -270,15 +287,13 @@ export async function updateProfile(id: number, p: ProfileInput, coords: { lat: 
       bio = ${p.bio}, instagram = ${p.instagram}, updated_at = now()
     WHERE id = ${id} RETURNING *`) as Row[];
   const account = rows[0] ? toAccount(rows[0]) : null;
-  // Un profil déjà validé est mis à jour sur le site immédiatement.
-  if (account?.status === "published") await upsertArtist(account);
-  return account;
-}
-
-export async function submitProfile(id: number): Promise<void> {
-  await ensureAccountTables();
-  await connect()`UPDATE artist_accounts SET profile_status = 'submitted', submitted_at = now(), updated_at = now()
-    WHERE id = ${id} AND profile_status = 'draft'`;
+  if (!account) return null;
+  // Un profil en ligne est mis à jour sur le site immédiatement ; un abonné pas encore en ligne y apparaît.
+  if (account.status === "published") {
+    await upsertArtist(account);
+    return account;
+  }
+  return (await autoPublish(account.id)).account ?? account;
 }
 
 /* ---------- Abonnement Stripe ---------- */
@@ -293,15 +308,16 @@ export async function linkSubscription(
 ): Promise<void> {
   await ensureAccountTables();
   const sql = connect();
-  if ("accountId" in where) {
-    await sql`UPDATE artist_accounts SET stripe_subscription_id = ${sub.subscriptionId},
-        stripe_customer_id = COALESCE(${sub.customerId}, stripe_customer_id), subscription_status = ${sub.status}, updated_at = now()
-      WHERE id = ${where.accountId}`;
-  } else {
-    await sql`UPDATE artist_accounts SET stripe_subscription_id = ${sub.subscriptionId},
-        stripe_customer_id = COALESCE(${sub.customerId}, stripe_customer_id), subscription_status = ${sub.status}, updated_at = now()
-      WHERE signup_id = ${where.signupId}`;
-  }
+  const rows = (
+    "accountId" in where
+      ? await sql`UPDATE artist_accounts SET stripe_subscription_id = ${sub.subscriptionId},
+          stripe_customer_id = COALESCE(${sub.customerId}, stripe_customer_id), subscription_status = ${sub.status}, updated_at = now()
+        WHERE id = ${where.accountId} RETURNING id`
+      : await sql`UPDATE artist_accounts SET stripe_subscription_id = ${sub.subscriptionId},
+          stripe_customer_id = COALESCE(${sub.customerId}, stripe_customer_id), subscription_status = ${sub.status}, updated_at = now()
+        WHERE signup_id = ${where.signupId} RETURNING id`
+  ) as Row[];
+  await syncPublication(rows.map((r) => r.id as number));
 }
 
 /**
@@ -316,14 +332,57 @@ export async function updateAccountSubscription(
 ): Promise<void> {
   await ensureAccountTables();
   const sql = connect();
-  const rows = (await sql`UPDATE artist_accounts SET subscription_status = ${status}, updated_at = now()
+  let rows = (await sql`UPDATE artist_accounts SET subscription_status = ${status}, updated_at = now()
     WHERE stripe_subscription_id = ${subscriptionId} RETURNING id`) as Row[];
   if (rows.length === 0 && link?.accountId) {
-    await sql`UPDATE artist_accounts SET stripe_subscription_id = ${subscriptionId},
+    rows = (await sql`UPDATE artist_accounts SET stripe_subscription_id = ${subscriptionId},
         stripe_customer_id = COALESCE(${link.customerId ?? null}, stripe_customer_id), subscription_status = ${status}, updated_at = now()
       WHERE id = ${link.accountId} AND (stripe_subscription_id IS NULL OR subscription_status IS NULL
-        OR subscription_status NOT IN ('active', 'trialing', 'past_due'))`;
+        OR subscription_status NOT IN ('active', 'trialing', 'past_due')) RETURNING id`) as Row[];
   }
+  await syncPublication(rows.map((r) => r.id as number));
+}
+
+/**
+ * Après un changement d'abonnement : publication automatique d'un abonné,
+ * retrait du site quand l'abonnement est terminé. N'interrompt jamais le
+ * rattachement du paiement (erreurs journalisées).
+ */
+async function syncPublication(accountIds: number[]): Promise<void> {
+  for (const id of accountIds) {
+    try {
+      const account = await getAccount(id);
+      if (!account) continue;
+      if (subscriptionEnded(account.subscriptionStatus) && account.status === "published") await unpublishAccount(id, "draft");
+      else await autoPublish(id);
+    } catch (e) {
+      console.error(`[compte] publication automatique du compte ${id} impossible :`, e);
+    }
+  }
+}
+
+export type AutoPublishResult = { outcome: "published" | "needs-location" | "skip"; account: Account | null };
+
+/**
+ * Met en ligne le profil d'un tatoueur abonné (sans validation manuelle, même
+ * sans photo). Géocode l'adresse de l'inscription si besoin pour la carte.
+ */
+export async function autoPublish(accountId: number): Promise<AutoPublishResult> {
+  let account = await getAccount(accountId);
+  if (!account) return { outcome: "skip", account: null };
+  let decision = autoPublishDecision({ ...account, paid: hasPaidAccess(account.subscriptionStatus) });
+  if (decision === "needs-location" && (account.address || account.city)) {
+    const place = await geocode(account.address, account.city).catch(() => null);
+    if (place) {
+      const rows = (await connect()`UPDATE artist_accounts SET lat = ${place.lat}, lng = ${place.lng},
+          city = ${account.city || place.city}, updated_at = now() WHERE id = ${accountId} RETURNING *`) as Row[];
+      if (rows[0]) account = toAccount(rows[0]);
+      decision = autoPublishDecision({ ...account, paid: hasPaidAccess(account.subscriptionStatus) });
+    }
+  }
+  if (decision !== "publish") return { outcome: decision, account };
+  await publishAccount(accountId);
+  return { outcome: "published", account: await getAccount(accountId) };
 }
 
 /* ---------- Validation (admin) ---------- */
@@ -333,6 +392,29 @@ export async function listAccounts(): Promise<Account[]> {
   const rows = (await connect()`SELECT * FROM artist_accounts
     ORDER BY CASE profile_status WHEN 'submitted' THEN 0 WHEN 'published' THEN 1 ELSE 2 END, submitted_at DESC NULLS LAST, id DESC`) as Row[];
   return rows.map(toAccount);
+}
+
+/** Copie les photos du compte dans `portfolio_items` (table lue par le site). */
+async function syncPortfolio(accountId: number): Promise<void> {
+  const sql = connect();
+  const artistId = artistIdFor(accountId);
+  const photos = await listPhotos(accountId);
+  const rows = photos.map((p, i) => ({
+    id: p.id,
+    artist_id: artistId,
+    position: i,
+    base: p.base,
+    width: p.width,
+    height: p.height,
+    color: p.color,
+    alt: p.alt,
+    style: p.style,
+    zone: p.zone,
+  }));
+  await sql`DELETE FROM portfolio_items WHERE artist_id = ${artistId}`;
+  if (rows.length) {
+    await sql`INSERT INTO portfolio_items SELECT * FROM json_populate_recordset(null::portfolio_items, ${JSON.stringify(rows)}::json)`;
+  }
 }
 
 async function upsertArtist(a: Account): Promise<string> {
@@ -347,6 +429,7 @@ async function upsertArtist(a: Account): Promise<string> {
       city_slug = EXCLUDED.city_slug, studio = EXCLUDED.studio, address = EXCLUDED.address, lat = EXCLUDED.lat, lng = EXCLUDED.lng,
       styles = EXCLUDED.styles, price_from = EXCLUDED.price_from, hourly_rate = EXCLUDED.hourly_rate, bio = EXCLUDED.bio,
       avatar = EXCLUDED.avatar, cover = EXCLUDED.cover, instagram = EXCLUDED.instagram`;
+  await syncPortfolio(a.id);
   return row.slug;
 }
 
@@ -359,10 +442,55 @@ export async function publishAccount(id: number): Promise<string> {
   return slug;
 }
 
-/** Retire le profil du site (il redevient un brouillon modifiable). */
-export async function unpublishAccount(id: number): Promise<void> {
+/**
+ * Retire le profil du site. « hidden » (par l'équipe) : il n'est plus republié
+ * automatiquement ; « draft » (fin d'abonnement) : il revient dès le prochain paiement.
+ * Les photos restent dans le compte.
+ */
+export async function unpublishAccount(id: number, status: "hidden" | "draft" = "hidden"): Promise<void> {
   await ensureAccountTables();
   const sql = connect();
-  await sql`DELETE FROM artists WHERE id = ${`acc-${id}`}`;
-  await sql`UPDATE artist_accounts SET profile_status = 'draft', artist_id = NULL, updated_at = now() WHERE id = ${id}`;
+  await sql`DELETE FROM portfolio_items WHERE artist_id = ${artistIdFor(id)}`;
+  await sql`DELETE FROM artists WHERE id = ${artistIdFor(id)}`;
+  await sql`UPDATE artist_accounts SET profile_status = ${status}, artist_id = NULL, updated_at = now() WHERE id = ${id}`;
+}
+
+/* ---------- Photos du portfolio ---------- */
+
+export const MAX_PHOTOS = 60;
+
+export async function listPhotos(accountId: number): Promise<PortfolioItem[]> {
+  await ensureAccountTables();
+  const rows = (await connect()`SELECT * FROM account_photos WHERE account_id = ${accountId} ORDER BY position, created_at DESC`) as Row[];
+  return rows.map((r) => ({ id: r.id, base: r.base, width: r.width, height: r.height, color: r.color, alt: r.alt, style: r.style, zone: r.zone }));
+}
+
+/** Ajoute une photo en tête du portfolio ; visible sur le profil public s'il est en ligne. */
+export async function addPhoto(accountId: number, image: ImageAsset, meta: { style: StyleSlug; zone: BodyZone }): Promise<PortfolioItem[]> {
+  await ensureAccountTables();
+  const sql = connect();
+  const id = `acc${accountId}-${image.id}`;
+  await sql`INSERT INTO account_photos (id, account_id, position, base, width, height, color, alt, style, zone)
+    VALUES (${id}, ${accountId}, (SELECT COALESCE(MIN(position), 0) - 1 FROM account_photos WHERE account_id = ${accountId}),
+      ${image.base}, ${image.width}, ${image.height}, ${image.color}, ${image.alt}, ${meta.style}, ${meta.zone})`;
+  await refreshPublishedPortfolio(accountId);
+  return listPhotos(accountId);
+}
+
+export async function deletePhoto(accountId: number, photoId: string): Promise<PortfolioItem[]> {
+  await ensureAccountTables();
+  await connect()`DELETE FROM account_photos WHERE id = ${photoId} AND account_id = ${accountId}`;
+  await refreshPublishedPortfolio(accountId);
+  return listPhotos(accountId);
+}
+
+export async function countPhotos(accountId: number): Promise<number> {
+  await ensureAccountTables();
+  const rows = (await connect()`SELECT count(*)::int AS n FROM account_photos WHERE account_id = ${accountId}`) as Row[];
+  return rows[0]?.n ?? 0;
+}
+
+async function refreshPublishedPortfolio(accountId: number): Promise<void> {
+  const account = await getAccount(accountId);
+  if (account?.status === "published") await syncPortfolio(accountId);
 }

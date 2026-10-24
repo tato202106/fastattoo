@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { artistIdFor, artistSlugFor, cleanInstagram, missingForSubmission, parseProfile, toArtistRow } from "@/lib/accounts/profile";
+import { artistIdFor, artistSlugFor, autoPublishDecision, cleanInstagram, missingForSubmission, parseProfile, subscriptionEnded, toArtistRow } from "@/lib/accounts/profile";
 import { adminToken, checkAdminPassword, verifyAdminToken } from "@/lib/auth/admin";
 import { hashPassword, isTokenFormat, newToken, passwordError, tokenHash, verifyPassword } from "@/lib/auth/password";
 
@@ -115,5 +115,29 @@ describe("accès admin", () => {
     expect(checkAdminPassword("motdepasse-admin", "motdepasse-admin")).toBe(true);
     expect(checkAdminPassword("motdepasse-admin", "motdepasse")).toBe(false);
     expect(checkAdminPassword(undefined, "x")).toBe(false);
+  });
+});
+
+describe("publication automatique du profil", () => {
+  const base = { status: "draft" as const, paid: true, lat: 47.2, lng: -1.55 };
+
+  it("abonné : publié directement, sans photo ni validation", () => {
+    expect(autoPublishDecision(base)).toBe("publish");
+    expect(autoPublishDecision({ ...base, status: "submitted" })).toBe("publish");
+  });
+
+  it("pas abonné, déjà en ligne ou retiré par l'équipe : rien à faire", () => {
+    expect(autoPublishDecision({ ...base, paid: false })).toBe("skip");
+    expect(autoPublishDecision({ ...base, status: "published" })).toBe("skip");
+    expect(autoPublishDecision({ ...base, status: "hidden" })).toBe("skip");
+  });
+
+  it("sans localisation : il faut l'adresse pour apparaître sur la carte", () => {
+    expect(autoPublishDecision({ ...base, lat: null, lng: null })).toBe("needs-location");
+  });
+
+  it("abonnement terminé : le profil quitte la carte", () => {
+    for (const s of ["canceled", "unpaid", "incomplete_expired", "paused"]) expect(subscriptionEnded(s)).toBe(true);
+    for (const s of [null, "active", "trialing", "past_due", "incomplete"]) expect(subscriptionEnded(s)).toBe(false);
   });
 });

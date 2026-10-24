@@ -6,7 +6,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { ArtistCardSkeleton } from "@/components/ui/Skeleton";
 import { DEFAULT_FILTERS } from "@/lib/search/filters";
-import { DEMO_PROFILES } from "@/lib/showcase";
+import { isDemoArtist } from "@/lib/showcase";
 import { fetchSearch } from "@/lib/search/client";
 import { GEO_MESSAGES, geolocationAlreadyGranted, useLocation } from "@/lib/store/location";
 import type { ArtistCard as Card } from "@/lib/types";
@@ -51,7 +51,7 @@ export function NearbyArtists({ initial }: { initial: Card[] }) {
             Tatoueurs autour de toi
           </h2>
           <p className="text-sm text-muted" aria-live="polite">
-            {DEMO_PROFILES
+            {items.length > 0 && items.every(isDemoArtist)
               ? "Aperçu de Fastattoo avec des profils d'exemple"
               : nearby
               ? nearby.total > 0

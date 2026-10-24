@@ -8,7 +8,8 @@ const ID_PATTERN = /^[a-z0-9]{16,40}$/;
 
 /**
  * Variantes des images uploadées. Générées à la première demande à partir de
- * l'original, puis conservées dans le stockage (compression automatique).
+ * l'original, puis conservées dans le stockage quand il le permet (sinon par
+ * le cache HTTP immuable du CDN).
  */
 export async function GET(_req: Request, ctx: RouteContext<"/media/u/[id]/[file]">) {
   const { id, file } = await ctx.params;
@@ -17,12 +18,12 @@ export async function GET(_req: Request, ctx: RouteContext<"/media/u/[id]/[file]
 
   const store = storage();
   const key = `${id}/${variant.size}.${variant.format}`;
-  const cached = await store.get(key);
+  const cached = store.cachesVariants ? await store.get(key) : null;
   if (cached) return imageResponse(cached, variant.format);
 
   const original = await store.get(`${id}/source`);
   if (!original) return new Response("Not found", { status: 404 });
   const body = await renderBitmapVariant(original, variant.size, variant.format);
-  await store.put(key, body);
+  if (store.cachesVariants) await store.put(key, body);
   return imageResponse(body, variant.format);
 }

@@ -147,3 +147,20 @@ Limites connues :
   - **webhook** : accepté aussi sur `/api/stripe/webhook`, `/api/webhooks/stripe` et `/api/webhook`, et `checkout.session.completed` rattache l'abonnement au compte même si le tatoueur ferme la page avant la confirmation.
 - **Paywall toujours affiché après l'inscription** : la page de paiement montre toujours les forfaits et le bouton « S'abonner », même si la clé Stripe n'est pas détectée (le bouton affiche alors une erreur « paiement momentanément indisponible » au lieu de masquer la page). Rendu : `docs/rendus/11-paywall-inscription-375.png`.
 - **Prix inconnu de Stripe** (« No such price », typiquement un `price_…` du mode test avec une clé live) : le paiement réessaie automatiquement avec le prix retrouvé dans le compte, sinon avec un prix défini à la volée au bon montant. Le paiement n'est donc jamais bloqué par une variable `STRIPE_PRICE_…` erronée, et `/admin` signale la variable à corriger.
+
+## Profil en ligne dès l'abonnement, photos au fur et à mesure
+
+- **Plus de validation manuelle** : dès que l'abonnement est actif (paiement confirmé, webhook ou retour de Stripe), le profil est publié automatiquement. Il apparaît sur la carte et dans la recherche, **même sans photo ni présentation**. Seule la localisation est indispensable : l'adresse de l'inscription est géocodée (Géoplateforme IGN, avec repli sur les grandes villes connues du site). Sans ville localisable, l'espace tatoueur demande l'adresse, et le profil est publié dès qu'elle est enregistrée. Les comptes déjà abonnés sont publiés à leur prochaine visite de l'espace tatoueur.
+- **Fin d'abonnement** (`canceled`, `unpaid`, `incomplete_expired`, `paused`) : le profil quitte la carte. Les photos restent dans le compte, et le profil revient en ligne au prochain paiement.
+- **Modération** : dans `/admin`, « Retirer du site » passe le profil en `hidden`. Il n'est alors plus republié automatiquement, jusqu'à ce que l'équipe le remette en ligne.
+- **Photos du portfolio** (« Mes photos » dans l'espace tatoueur, `/api/compte/photos`) :
+  - ajout de plusieurs photos à la fois, avec un style et une zone, la plus récente en premier ; suppression possible ;
+  - les photos lourdes sont réduites dans le navigateur avant l'envoi (2000 px) ; maximum 60 photos ;
+  - elles sont gardées dans `account_photos` et copiées dans `portfolio_items` quand le profil est en ligne.
+- **Stockage des images en production** : sur Vercel, le disque est éphémère. Les originaux sont donc stockés dans Neon (table `media_files`, `bytea`), et les variantes, régénérées à la demande, sont servies avec un cache HTTP immuable.
+- **Vrais tatoueurs ≠ profils d'exemple** :
+  - le badge « Profil exemple » et son avertissement ne concernent plus que les profils de démonstration (`isDemoArtist`) ;
+  - un tatoueur inscrit sans avis affiche « Nouveau » (carte, fiches, profil) au lieu d'une note de 0 ;
+  - sans prix renseigné, « sur devis » ;
+  - un portfolio vide affiche un message d'attente.
+- L'onglet **Profil** mène un tatoueur connecté à son espace (`/espace-tatoueur`).
