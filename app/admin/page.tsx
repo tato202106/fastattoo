@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { AdminLogin, AdminPanel } from "@/components/espace/AdminPanel";
 import { adminConfigured, isAdmin } from "@/lib/accounts/admin-session";
+import { PaymentSetup } from "@/components/espace/PaymentSetup";
 import { listAccounts } from "@/lib/accounts/db";
+import { billingDiagnostics } from "@/lib/billing/env";
+import { checkStripeSetup } from "@/lib/billing/stripe";
 
 export const metadata: Metadata = { title: "Validation des profils", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -32,8 +35,13 @@ export default async function AdminPage() {
   } catch (e) {
     error = (e as Error).message;
   }
+  const diag = billingDiagnostics();
+  const check = diag.secretKey.ok ? await checkStripeSetup().catch(() => null) : null;
   return (
-    <main className="mx-auto max-w-3xl px-4 pt-safe pb-nav lg:pt-10">
+    <main className="mx-auto max-w-3xl space-y-6 px-4 pt-safe pb-nav lg:pt-10">
+      <div className="pt-4">
+        <PaymentSetup diag={diag} check={check} />
+      </div>
       <AdminPanel initial={accounts} error={error} />
     </main>
   );

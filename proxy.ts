@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { subscriptionStatusForToken } from "@/lib/accounts/access-db";
 import { isTokenFormat } from "@/lib/auth/password";
 import { gateDecision, hasPaidAccess, PAYMENT_PATH } from "@/lib/billing/access";
+import { stripeConfigured } from "@/lib/billing/env";
 
 /**
  * Paiement obligatoire pour les tatoueurs : un compte connecté dont
@@ -17,7 +18,7 @@ const PAID_TTL_MS = 60_000;
 const paidCache = new Map<string, number>();
 
 export async function proxy(request: NextRequest) {
-  const enabled = Boolean(process.env.STRIPE_SECRET_KEY && process.env.DATABASE_URL);
+  const enabled = Boolean(stripeConfigured() && process.env.DATABASE_URL);
   const token = request.cookies.get(ACCOUNT_COOKIE)?.value;
   if (!enabled || !isTokenFormat(token)) return NextResponse.next();
 

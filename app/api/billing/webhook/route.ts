@@ -1,3 +1,4 @@
+import { stripeWebhookSecret } from "@/lib/billing/env";
 import { updateAccountSubscription } from "@/lib/accounts/db";
 import { applySubscriptionUpdate } from "@/lib/billing/signups-db";
 import { retrieveSubscription, stripeEnabled } from "@/lib/billing/stripe";
@@ -10,7 +11,7 @@ import { INVOICE_EVENTS, invoiceSubscriptionId, SUBSCRIPTION_EVENTS, toSubscript
  * avec le secret de signature dans STRIPE_WEBHOOK_SECRET.
  */
 export async function POST(req: Request) {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  const secret = stripeWebhookSecret();
   if (!secret || !stripeEnabled()) return Response.json({ error: "Webhook Stripe non configuré" }, { status: 503 });
 
   // Corps brut : la signature porte sur le texte exact envoyé par Stripe.
