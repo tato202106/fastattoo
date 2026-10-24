@@ -15,6 +15,9 @@ export function ReviewsList({ artistId, reviews }: { artistId: string; reviews: 
   const [expanded, setExpanded] = useState(false);
   const all = [...(hydrated ? local.filter((r) => r.artistId === artistId) : []), ...reviews];
   const shown = expanded ? all : all.slice(0, 3);
+  if (all.length === 0) {
+    return <p className="rounded-2xl bg-surface-2 p-4 text-[15px] text-muted">Pas encore d&apos;avis : sois parmi les premiers à te faire tatouer ici.</p>;
+  }
   return (
     <div>
       <ul className="space-y-4">

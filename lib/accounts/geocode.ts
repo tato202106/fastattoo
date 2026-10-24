@@ -1,4 +1,6 @@
 import "server-only";
+import { CITIES } from "../cities";
+import { normalize } from "../text";
 
 /**
  * Géocodage d'une adresse française (Géoplateforme IGN, gratuit, sans clé),
@@ -36,11 +38,19 @@ async function query(q: string, municipality: boolean): Promise<GeocodeResult | 
   return null;
 }
 
+/** Grandes villes connues du site : repli si le service de géocodage ne répond pas. */
+function knownCity(city: string): GeocodeResult | null {
+  const key = normalize(city);
+  const found = key ? CITIES.find((c) => c.aliases.includes(key) || normalize(c.name) === key) : undefined;
+  return found ? { lat: found.lat, lng: found.lng, city: found.name } : null;
+}
+
 /** Adresse complète d'abord (précis), sinon la ville seule. */
 export async function geocode(address: string, city: string): Promise<GeocodeResult | null> {
   if (address) {
     const precise = await query(`${address} ${city}`.trim(), false);
     if (precise) return precise;
   }
-  return city ? query(city, true) : null;
+  if (!city) return null;
+  return (await query(city, true)) ?? knownCity(city);
 }

@@ -4,15 +4,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SubscribedView } from "@/components/billing/SignupConfirmation";
-import { buttonClass, Button } from "@/components/ui/Button";
+import { buttonClass } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import type { Account } from "@/lib/accounts/db";
 import { artistSlugFor, missingForSubmission } from "@/lib/accounts/profile";
+import { PAYMENT_PATH } from "@/lib/billing/access";
 import type { PlanId } from "@/lib/billing/plans";
+import type { PortfolioItem } from "@/lib/types";
+import { PhotosManager } from "./PhotosManager";
 import { ProfileForm } from "./ProfileForm";
 
-/** Espace d'un tatoueur connecté : statut du profil, profil modifiable, abonnement. */
-export function ArtistSpace({ initial, welcome }: { initial: Account; welcome: boolean }) {
+/** Espace d'un tatoueur connecté : statut du profil, photos, profil modifiable, abonnement. */
+export function ArtistSpace({ initial, photos, paid, welcome }: { initial: Account; photos: PortfolioItem[]; paid: boolean; welcome: boolean }) {
   const router = useRouter();
   const [account, setAccount] = useState(initial);
 
@@ -40,13 +43,23 @@ export function ArtistSpace({ initial, welcome }: { initial: Account; welcome: b
           <p className="flex items-center gap-2 font-semibold text-success">
             <Icon name="check" size={20} strokeWidth={3} /> Bienvenue sur Fastattoo !
           </p>
-          <p className="mt-1 text-[15px]">Ton abonnement est actif. Complète ton profil ci-dessous, puis envoie-le : on le vérifie et on le met en ligne.</p>
+          <p className="mt-1 text-[15px]">
+            Ton abonnement est actif{account.status === "published" ? " et ton profil est déjà en ligne sur la carte" : ""}. Ajoute tes photos au fur et à mesure et
+            complète ton profil quand tu veux.
+          </p>
         </div>
       )}
 
-      <StatusCard account={account} onChange={setAccount} />
+      <StatusCard account={account} paid={paid} />
 
-      <section aria-labelledby="profil" className="space-y-4">
+      <section aria-labelledby="photos" className="space-y-4">
+        <h2 id="photos" className="font-display text-[24px] font-bold">
+          Mes photos
+        </h2>
+        <PhotosManager initial={photos} styles={account.styles} published={account.status === "published"} />
+      </section>
+
+      <section aria-labelledby="profil" className="scroll-mt-4 space-y-4">
         <h2 id="profil" className="font-display text-[24px] font-bold">
           Mon profil
         </h2>
@@ -63,25 +76,8 @@ export function ArtistSpace({ initial, welcome }: { initial: Account; welcome: b
   );
 }
 
-function StatusCard({ account, onChange }: { account: Account; onChange: (a: Account) => void }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const missing = missingForSubmission(account);
-
-  async function submit() {
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/compte/envoyer", { method: "POST" });
-      const data = (await res.json().catch(() => ({}))) as { account?: Account; error?: string };
-      if (!res.ok || !data.account) throw new Error(data.error ?? "Envoi impossible.");
-      onChange(data.account);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
+function StatusCard({ account, paid }: { account: Account; paid: boolean }) {
+  const tips = missingForSubmission(account).filter((m) => !m.startsWith("ta ville"));
 
   if (account.status === "published") {
     return (
@@ -89,39 +85,55 @@ function StatusCard({ account, onChange }: { account: Account; onChange: (a: Acc
         <p className="flex items-center gap-2 font-semibold text-success">
           <Icon name="verified" size={20} /> Ton profil est en ligne
         </p>
-        <p className="mt-1 text-sm text-muted">Les modifications que tu enregistres apparaissent sur le site en une minute environ.</p>
+        <p className="mt-1 text-sm text-muted">
+          Il est visible sur la carte et dans la recherche. Tes modifications et tes nouvelles photos apparaissent sur le site en une minute environ.
+        </p>
+        {tips.length > 0 && (
+          <p className="mt-2 text-sm text-muted">
+            Pour donner envie aux clients, ajoute : <strong className="font-medium text-fg">{tips.join(", ")}</strong>.
+          </p>
+        )}
         <Link href={`/tatoueurs/${artistSlugFor(account.id, account.name, account.city)}`} className={buttonClass("outline", "md", "mt-3 w-full")}>
           Voir mon profil public
         </Link>
       </section>
     );
   }
-  if (account.status === "submitted") {
+  if (account.status === "hidden") {
     return (
       <section className="rounded-2xl bg-surface p-4 shadow-card">
         <p className="flex items-center gap-2 font-semibold">
-          <Icon name="clock" size={20} /> Profil en cours de validation
+          <Icon name="close" size={20} /> Profil retiré du site
         </p>
-        <p className="mt-1 text-sm text-muted">On vérifie ton profil et on le met en ligne rapidement. Tu peux encore le modifier en attendant.</p>
+        <p className="mt-1 text-sm text-muted">L&apos;équipe Fastattoo a retiré ton profil du site. Réponds à notre e-mail ou écris-nous pour en savoir plus.</p>
+      </section>
+    );
+  }
+  if (!paid) {
+    return (
+      <section className="rounded-2xl bg-surface p-4 shadow-card">
+        <p className="flex items-center gap-2 font-semibold">
+          <Icon name="lock" size={20} /> Profil pas encore en ligne
+        </p>
+        <p className="mt-1 text-sm text-muted">Active ton abonnement : ton profil est mis en ligne sur la carte aussitôt le paiement validé.</p>
+        <Link href={PAYMENT_PATH} className={buttonClass("primary", "lg", "mt-3 w-full")}>
+          Activer mon abonnement
+        </Link>
       </section>
     );
   }
   return (
     <section className="rounded-2xl bg-surface p-4 shadow-card">
       <p className="flex items-center gap-2 font-semibold">
-        <Icon name="edit" size={20} /> Profil pas encore en ligne
+        <Icon name="pin" size={20} /> Encore une info pour apparaître sur la carte
       </p>
-      {missing.length > 0 ? (
-        <p className="mt-1 text-sm text-muted">
-          Pour l&apos;envoyer, complète et enregistre : <strong className="font-medium text-fg">{missing.join(", ")}</strong>.
-        </p>
-      ) : (
-        <p className="mt-1 text-sm text-muted">Tout est prêt : envoie ton profil, on le vérifie avant de le mettre en ligne.</p>
-      )}
-      {error && <p className="mt-2 text-sm text-accent">{error}</p>}
-      <Button className="mt-3 w-full" size="lg" disabled={busy || missing.length > 0} onClick={submit}>
-        {busy ? "Envoi…" : "Envoyer mon profil pour validation"}
-      </Button>
+      <p className="mt-1 text-sm text-muted">
+        On n&apos;a pas réussi à situer ton studio. Indique ta ville ou l&apos;adresse de ton studio dans « Mon profil » ci-dessous et enregistre : ton profil
+        sera mis en ligne aussitôt.
+      </p>
+      <a href="#profil" className={buttonClass("primary", "lg", "mt-3 w-full")}>
+        Compléter mon adresse
+      </a>
     </section>
   );
 }

@@ -4,7 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { Map as MaplibreMap, Marker, setWorkerUrl, type LngLatBoundsLike, type StyleSpecification } from "maplibre-gl";
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from "@/lib/cities";
-import { DEMO_PROFILES } from "@/lib/showcase";
+import { isDemoArtist, isNewArtist, priceFromLabel } from "@/lib/showcase";
 import { MAPLIBRE_WORKER_URL } from "@/lib/maplibre-version";
 import type { ArtistCard, BBox, LatLng } from "@/lib/types";
 
@@ -39,7 +39,8 @@ function defaultStyle(dark: boolean): StyleSpecification {
 }
 
 function markerLabel(a: ArtistCard) {
-  if (DEMO_PROFILES) return `${a.priceFrom} €`;
+  if (isDemoArtist(a)) return `${a.priceFrom} €`;
+  if (isNewArtist(a)) return a.priceFrom > 0 ? `${a.priceFrom} €` : "Nouveau";
   return `★ ${a.rating.toFixed(1).replace(".", ",")}`;
 }
 
@@ -191,7 +192,7 @@ export default function ArtistMap({
       const el = document.createElement("button");
       el.type = "button";
       el.className = "ft-marker";
-      el.setAttribute("aria-label", DEMO_PROFILES ? `${a.name}, profil exemple` : `${a.name}, note ${a.rating.toFixed(1)}`);
+      el.setAttribute("aria-label", isDemoArtist(a) ? `${a.name}, profil exemple` : isNewArtist(a) ? `${a.name}, nouveau, ${priceFromLabel(a.priceFrom)}` : `${a.name}, note ${a.rating.toFixed(1)}`);
       el.style.cssText = "padding:6px;background:none;border:0;";
       const pill = document.createElement("span");
       pill.textContent = markerLabel(a);

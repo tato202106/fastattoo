@@ -13,6 +13,7 @@ const STATUS: Record<Account["status"], { label: string; className: string }> = 
   submitted: { label: "À valider", className: "bg-accent text-accent-fg" },
   published: { label: "En ligne", className: "bg-success/15 text-success" },
   draft: { label: "Brouillon", className: "bg-surface-2 text-muted" },
+  hidden: { label: "Retiré par l'équipe", className: "bg-surface-2 text-muted" },
 };
 
 const SUB: Record<string, string> = {
@@ -142,7 +143,7 @@ export function AdminPanel({ initial, error }: { initial: Account[]; error: stri
             <div className="mt-3 flex flex-wrap gap-2">
               {a.status !== "published" ? (
                 <Button disabled={busy === a.id || a.lat == null} onClick={() => act(a.id, "publish")}>
-                  {busy === a.id ? "…" : "Valider et mettre en ligne"}
+                  {busy === a.id ? "…" : a.status === "hidden" ? "Remettre en ligne" : "Mettre en ligne"}
                 </Button>
               ) : (
                 <>

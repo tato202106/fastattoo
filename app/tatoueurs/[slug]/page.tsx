@@ -16,7 +16,7 @@ import { Rating } from "@/components/ui/Rating";
 import { artists } from "@/lib/data";
 import { formatTime, relativeDay } from "@/lib/dates";
 import { toCard } from "@/lib/search/engine";
-import { DEMO_PROFILES } from "@/lib/showcase";
+import { isDemoArtist, isNewArtist, priceFromLabel } from "@/lib/showcase";
 import { styleLabel } from "@/lib/styles";
 
 export const revalidate = 3600;
@@ -29,14 +29,15 @@ export async function generateMetadata({ params }: PageProps<"/tatoueurs/[slug]"
   const { slug } = await params;
   const a = await artists.getBySlug(slug);
   if (!a) return {};
-  const description = DEMO_PROFILES
+  const demo = isDemoArtist(a);
+  const description = demo
     ? `Profil exemple Fastattoo · ${a.styles.map(styleLabel).join(", ")} · ${a.city}`
-    : `${a.title} à ${a.city} · ${a.styles.map(styleLabel).join(", ")} · ★ ${a.rating} (${a.reviewCount} avis) · dès ${a.priceFrom} €`;
+    : `${a.title} à ${a.city} · ${a.styles.map(styleLabel).join(", ")}${isNewArtist(a) ? "" : ` · ★ ${a.rating} (${a.reviewCount} avis)`} · ${priceFromLabel(a.priceFrom)}`;
   return {
     title: `${a.name}, ${a.title.toLowerCase()} à ${a.city}`,
     description,
     // Les profils d'exemple ne doivent pas apparaître dans Google.
-    ...(DEMO_PROFILES ? { robots: { index: false, follow: true } } : {}),
+    ...(demo ? { robots: { index: false, follow: true } } : {}),
     openGraph: { title: a.name, description, images: [{ url: `${a.cover.base}/large.webp`, width: 1600 }] },
   };
 }
@@ -57,6 +58,8 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
   const a = await artists.getBySlug(slug);
   if (!a) notFound();
   const card = toCard(a, null);
+  const demo = isDemoArtist(a);
+  const fresh = isNewArtist(a);
   const requestHref = `/tatoueurs/${a.slug}/demande`;
   const slotsByDay = a.nextSlots.slice(0, 8);
 
@@ -72,7 +75,7 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
           {card.sponsor && <SponsorBadge className="mt-1" />}
         </div>
       </div>
-      {DEMO_PROFILES && (
+      {demo && (
         <div className="mt-3 rounded-2xl bg-surface-2 p-3 text-sm">
           <DemoBadge className="bg-surface" />
           <p className="mt-1.5 text-muted">
@@ -81,11 +84,15 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
           </p>
         </div>
       )}
-      <div className={DEMO_PROFILES ? "hidden" : "mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[15px]"}>
-        <a href="#avis" className="inline-flex items-center gap-1">
-          <Rating value={a.rating} size={16} />
-          <span className="text-muted">· {a.reviewCount} avis</span>
-        </a>
+      <div className={demo ? "hidden" : "mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[15px]"}>
+        {fresh ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-0.5 text-sm font-semibold text-accent">Nouveau sur Fastattoo</span>
+        ) : (
+          <a href="#avis" className="inline-flex items-center gap-1">
+            <Rating value={a.rating} size={16} />
+            <span className="text-muted">· {a.reviewCount} avis</span>
+          </a>
+        )}
         {a.verified && (
           <span className="inline-flex items-center gap-1 font-medium text-success">
             <Icon name="verified" size={17} /> Vérifiée
@@ -93,8 +100,8 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
         )}
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
-        <Tag>dès {a.priceFrom} €</Tag>
-        {a.nextSlots[0] && !DEMO_PROFILES && (
+        <Tag>{priceFromLabel(a.priceFrom)}</Tag>
+        {a.nextSlots[0] && !demo && (
           <Tag className="bg-success/12 text-success">
             Dispo {relativeDay(a.nextSlots[0].date).toLowerCase()} à {formatTime(a.nextSlots[0].time)}
           </Tag>
@@ -142,7 +149,7 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-surface p-4 shadow-card">
             <p className="text-xs text-muted">À partir de</p>
-            <p className="text-2xl font-bold">{a.priceFrom} €</p>
+            <p className="text-2xl font-bold">{a.priceFrom > 0 ? `${a.priceFrom} €` : "Sur devis"}</p>
           </div>
           <div className="rounded-2xl bg-surface p-4 shadow-card">
             <p className="text-xs text-muted">Taux horaire</p>
@@ -152,7 +159,7 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
         <p className="mt-2 text-sm text-muted">Le prix final dépend de la taille, de l&apos;emplacement et du niveau de détail.</p>
       </Section>
 
-      {!DEMO_PROFILES && (
+      {!demo && (
       <Section title="Disponibilités" id="dispos">
         {slotsByDay.length ? (
           <ul className="scrollbar-none -mx-4 flex gap-2 overflow-x-auto px-4 lg:mx-0 lg:flex-wrap lg:px-0">
@@ -171,9 +178,9 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
       </Section>
       )}
 
-      {!DEMO_PROFILES && (
+      {!demo && (
       <Section title={`Avis (${a.reviewCount})`} id="avis">
-        <div className="mb-4 flex items-center gap-3">
+        <div className={fresh ? "hidden" : "mb-4 flex items-center gap-3"}>
           <span className="text-4xl font-bold">{a.rating.toFixed(1).replace(".", ",")}</span>
           <div>
             <Rating value={a.rating} size={18} />
@@ -209,7 +216,7 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
       {/* Portfolio : l'élément principal (desktop : grande colonne de gauche) */}
       <section aria-labelledby="portfolio" className="mt-6 px-4 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:mt-0 lg:px-0">
         <h2 id="portfolio" className="mb-3 flex items-baseline justify-between text-lg font-semibold">
-          Portfolio <span className="text-sm font-normal text-muted">{a.portfolio.length} tatouages</span>
+          Portfolio {a.portfolio.length > 0 && <span className="text-sm font-normal text-muted">{a.portfolio.length} tatouages</span>}
         </h2>
         <PortfolioGallery artistId={a.id} items={a.portfolio} />
       </section>
@@ -221,7 +228,7 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
         <div className="mx-auto flex max-w-xl items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{a.name}</p>
-            <p className="truncate text-xs text-muted">dès {a.priceFrom} €</p>
+            <p className="truncate text-xs text-muted">{priceFromLabel(a.priceFrom)}</p>
           </div>
           <Link href={requestHref} className={buttonClass("primary", "lg", "flex-[1.4]")}>
             Demander un projet
