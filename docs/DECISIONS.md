@@ -112,5 +112,6 @@ Limites connues :
 - **Aucune donnée de carte dans l'application** : saisie uniquement sur Stripe Checkout (carte, Apple Pay, Google Pay).
 - **Limites avant production** :
   - Pas encore de comptes tatoueurs : `/mon-abonnement` ne fonctionne que sur l'appareil qui a payé.
-  - À ajouter : un webhook Stripe (renouvellements, échecs de paiement, résiliation → mise à jour de `artist_signups`) et un lien vers le portail client Stripe pour gérer ou résilier.
+  - **Webhook Stripe** `/api/billing/webhook` (signature vérifiée avec `STRIPE_WEBHOOK_SECRET`, logique pure dans `lib/billing/webhook.ts`) : `customer.subscription.*` et `invoice.paid` / `invoice.payment_failed` mettent à jour `artist_signups` (`subscription_status`, `plan`, `cancel_at_period_end`, `current_period_end`). Erreur Neon → réponse 500 pour que Stripe renvoie l'événement.
+  - **Portail client Stripe** : bouton « Gérer mon abonnement » sur `/mon-abonnement` (`/api/billing/portal`) pour changer de carte, voir les factures ou résilier. Le portail doit être activé une fois dans Stripe (Paramètres → Facturation → Portail client), en mode test et en mode live.
 - Reste de la Phase 6 : la mise en avant « Parrain » existe déjà (lib/referral.ts) ; la commission sur réservation n'est pas implémentée.

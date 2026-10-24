@@ -7,13 +7,21 @@ import { buttonClass } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { formatPrice, PLANS, type PlanId } from "@/lib/billing/plans";
 import { formatLongDate } from "@/lib/dates";
+import { ManageSubscription } from "./ManageSubscription";
 import { RealUpgrade } from "./RealUpgrade";
 
 interface Verified {
   plan: PlanId;
   renewsAt: string | null;
   trialEndsAt: string | null;
+  /** Statut Stripe (active, trialing, past_due, canceled…), si connu. */
+  status?: string;
+  /** Résiliation demandée : l'abonnement s'arrête à la fin de la période. */
+  cancelAtPeriodEnd?: boolean;
 }
+
+const UNPAID = new Set(["past_due", "unpaid", "incomplete"]);
+const ENDED = new Set(["canceled", "incomplete_expired"]);
 
 /** Retour de Stripe après l'inscription : vérification serveur, puis proposition de l'annuel aux abonnés mensuels. */
 export function SignupConfirmation() {
@@ -80,14 +88,24 @@ export function SubscribedView({ initial, welcome }: { initial: Verified; welcom
         <p className="mt-1 text-2xl font-bold">
           {p.name} · {formatPrice(p.amount)} / {p.per}
         </p>
-        {sub.trialEndsAt ? (
+        {sub.status && ENDED.has(sub.status) ? (
+          <p className="mt-1 text-sm font-medium text-accent">Abonnement résilié</p>
+        ) : sub.cancelAtPeriodEnd && sub.renewsAt ? (
+          <p className="mt-1 text-sm font-medium text-accent">Résiliation programmée : ton abonnement s&apos;arrête le {formatLongDate(sub.renewsAt)}</p>
+        ) : sub.trialEndsAt ? (
           <p className="mt-1 text-sm text-muted">Offre de lancement : premier prélèvement le {formatLongDate(sub.trialEndsAt)}</p>
         ) : sub.renewsAt ? (
           <p className="mt-1 text-sm text-muted">Prochain renouvellement le {formatLongDate(sub.renewsAt)}</p>
         ) : null}
       </section>
-      {sub.plan === "monthly" ? (
-        <RealUpgrade onUpgraded={(renewsAt) => setSub({ plan: "annual", renewsAt, trialEndsAt: sub.trialEndsAt })} />
+      {sub.status && UNPAID.has(sub.status) && (
+        <p role="alert" className="rounded-2xl bg-accent-soft p-4 text-[15px] font-medium text-accent">
+          Ton dernier paiement n&apos;est pas passé. Mets à jour ton moyen de paiement pour que ton abonnement continue.
+        </p>
+      )}
+      {!welcome && <ManageSubscription />}
+      {sub.status && ENDED.has(sub.status) ? null : sub.plan === "monthly" ? (
+        <RealUpgrade onUpgraded={(renewsAt) => setSub({ ...sub, plan: "annual", renewsAt })} />
       ) : (
         <p className="rounded-2xl bg-success/10 p-4 text-[15px] font-medium text-success">Tu profites du meilleur tarif : {formatPrice(PLANS.annual.amount)} pour 12 mois 🎉</p>
       )}

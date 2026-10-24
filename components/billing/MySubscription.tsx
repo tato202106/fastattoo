@@ -6,7 +6,7 @@ import { buttonClass } from "@/components/ui/Button";
 import type { PlanId } from "@/lib/billing/plans";
 import { SubscribedView } from "./SignupConfirmation";
 
-type Data = { subscription: { plan: PlanId; status: string; renewsAt: string | null; trialEndsAt: string | null } | null; mode?: string };
+type Data = { subscription: { plan: PlanId; status: string; renewsAt: string | null; trialEndsAt: string | null; cancelAtPeriodEnd?: boolean } | null; mode?: string };
 
 /** « Mon abonnement » pour un tatoueur abonné (abonnement Stripe relié à ce navigateur). */
 export function MySubscription() {
@@ -34,5 +34,5 @@ export function MySubscription() {
     );
   }
   const s = data.subscription;
-  return <SubscribedView initial={{ plan: s.plan, renewsAt: s.renewsAt, trialEndsAt: s.trialEndsAt }} />;
+  return <SubscribedView initial={{ plan: s.plan, renewsAt: s.renewsAt, trialEndsAt: s.trialEndsAt, status: s.status, cancelAtPeriodEnd: s.cancelAtPeriodEnd }} />;
 }

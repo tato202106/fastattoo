@@ -69,6 +69,7 @@ Voir [`.env.example`](.env.example).
 | `UPLOAD_DIR` | `.data/uploads` | Dossier du stockage disque des images uploadées |
 | `STRIPE_SECRET_KEY` | *(vide)* | Clé secrète Stripe. Vide = paiement en mode démo |
 | `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_ANNUAL` | *(vide)* | Identifiants de prix Stripe (sinon prix créés à la volée depuis `lib/pro-offer.ts`) |
+| `STRIPE_WEBHOOK_SECRET` | *(vide)* | Secret de signature du webhook Stripe (`/api/billing/webhook`). Vide = webhook désactivé |
 | `NEXT_PUBLIC_SITE_URL` | `https://fastattoo.com` | URL publique (sitemap, robots) |
 
 ## Structure

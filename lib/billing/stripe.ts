@@ -67,6 +67,7 @@ export async function createCheckoutSession(opts: { plan: PlanId; email?: string
 export interface StripeSubscription {
   id: string;
   status: string;
+  customer?: string | { id: string } | null;
   current_period_end?: number;
   trial_end?: number | null;
   cancel_at_period_end?: boolean;
@@ -106,6 +107,15 @@ export async function upgradeToAnnual(subscriptionId: string) {
     proration_behavior: "always_invoice",
     "metadata[plan]": "annual",
   });
+}
+
+/** Portail client Stripe : changer de carte, voir les factures, résilier. */
+export async function createPortalSession(customerId: string, returnUrl: string) {
+  return stripe<{ id: string; url: string }>("POST", "/billing_portal/sessions", { customer: customerId, return_url: returnUrl, locale: "fr" });
+}
+
+export function customerId(sub: StripeSubscription): string | null {
+  return typeof sub.customer === "string" ? sub.customer : (sub.customer?.id ?? null);
 }
 
 export function periodEnd(sub: StripeSubscription): number | undefined {
