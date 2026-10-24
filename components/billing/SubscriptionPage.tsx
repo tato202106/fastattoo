@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { annualSavings, formatPrice, PLAN_FEATURES, PLANS, TRIAL_LABEL, type PlanId } from "@/lib/billing/plans";
+import { ANNUAL_PERK, annualSavings, formatPrice, PLAN_FEATURES, PLANS, type PlanId } from "@/lib/billing/plans";
 import { formatLongDate } from "@/lib/dates";
 import { useApp } from "@/lib/store/app";
 import { DemoPaymentSheet } from "./DemoPaymentSheet";
@@ -25,7 +25,7 @@ export function PlanOption({ plan, selected, onSelect }: { plan: PlanId; selecte
       onClick={onSelect}
       className={clsx("tap relative w-full rounded-2xl border-2 bg-surface p-4 text-left", selected ? "border-fg" : "border-border")}
     >
-      {annual && <span className="absolute -top-3 right-4 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-accent-fg">−{savings.percent} % · {formatPrice(savings.saved)} d&apos;économie</span>}
+      {annual && <span className="absolute -top-3 right-4 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-accent-fg">🎁 {ANNUAL_PERK}</span>}
       <span className="flex items-center gap-3">
         <span className={clsx("inline-flex size-6 shrink-0 items-center justify-center rounded-full border-2", selected ? "border-fg bg-fg" : "border-border")}>
           {selected && <Icon name="check" size={14} strokeWidth={3} className="text-bg" />}
@@ -85,7 +85,7 @@ export function SubscriptionPage() {
             {current.name} · {formatPrice(current.amount)} / {current.per}
           </p>
           <p className="mt-1 text-sm text-muted">
-            {subscription.trialEndsAt ? `${TRIAL_LABEL} : premier prélèvement le ${formatLongDate(subscription.renewsAt)}` : `Renouvellement le ${formatLongDate(subscription.renewsAt)}`}
+            {`Renouvellement le ${formatLongDate(subscription.renewsAt)}`}
           </p>
           {subscription.provider === "demo" && <p className="mt-2 text-xs text-warning">Abonnement de démonstration (aucun paiement réel).</p>}
         </section>
@@ -155,12 +155,7 @@ export function SubscriptionPage() {
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg/95 px-4 pt-3 pb-[calc(12px+var(--safe-bottom))] backdrop-blur-md lg:static lg:border-0 lg:bg-transparent lg:p-0">
         <div className="mx-auto max-w-xl">
           {error && <p className="mb-2 text-sm text-accent">{error}</p>}
-          {payButton(plan, TRIAL_LABEL ? `Commencer — ${TRIAL_LABEL}` : `Payer ${formatPrice(PLANS[plan].amount)}${plan === "annual" ? " pour 1 an" : " / mois"}`)}
-          {TRIAL_LABEL && (
-            <p className="mt-2 text-center text-sm">
-              puis <strong>{formatPrice(PLANS[plan].amount)}</strong> / {PLANS[plan].per}
-            </p>
-          )}
+          {payButton(plan, `Payer ${formatPrice(PLANS[plan].amount)}${plan === "annual" ? " pour 1 an" : " / mois"}`)}
           <p className="mt-2 text-center text-xs text-muted">Espace pro de démonstration : aucun paiement réel ici.</p>
         </div>
       </div>

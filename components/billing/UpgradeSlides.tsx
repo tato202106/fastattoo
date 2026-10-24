@@ -2,14 +2,14 @@
 
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "react";
-import { annualSavings, formatPrice, PLANS } from "@/lib/billing/plans";
+import { ANNUAL_PERK, annualSavings, formatPrice, PLANS } from "@/lib/billing/plans";
 
 const s = annualSavings();
 
 /** Contenu des slides : uniquement des faits vérifiables (prix, économies). */
 export const UPGRADE_SLIDES = [
   {
-    kicker: "Forfait annuel",
+    kicker: `Forfait annuel · ${ANNUAL_PERK}`,
     title: `${formatPrice(PLANS.annual.amount)} pour 12 mois`,
     text: `Au lieu de ${formatPrice(s.yearlyMonthlyCost)} en payant chaque mois.`,
     tone: "bg-fg text-bg",

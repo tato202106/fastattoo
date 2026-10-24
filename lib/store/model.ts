@@ -138,6 +138,4 @@ export interface ArtistSubscription {
   provider: "stripe" | "demo";
   startedAt: string; // YYYY-MM-DD
   renewsAt: string; // YYYY-MM-DD (prochain prélèvement)
-  /** Fin de l'offre de lancement (semaine offerte), si en cours. */
-  trialEndsAt?: string | null;
 }

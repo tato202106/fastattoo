@@ -85,6 +85,8 @@ app/                    Routes (App Router)
   pro/                  Espace tatoueur : dashboard, demandes, calendrier, portfolio, onboarding, abonnement
   api/billing/          config, checkout, verify, subscription, upgrade (Stripe)
   mon-abonnement/       Abonnement du tatoueur (slides pour passer à l'annuel)
+  devenir-tatoueur/paiement/  Paiement obligatoire (fin d'inscription ; accès bloqué sinon, voir proxy.ts)
+proxy.ts                Renvoie un tatoueur connecté sans abonnement actif vers le paiement
   api/artists/          search, suggest, cards, [slug]
   api/uploads/          Upload d'images (normalisation sharp)
   media/                Variantes d'images (art de démo, avatars, uploads)
@@ -120,7 +122,7 @@ tests/unit, tests/e2e   Vitest, Playwright
 | Demandes, messagerie, rendez-vous, calendrier, favoris, avis laissés, notifications | **Simulés côté client** (localStorage) : un seul appareil, pas de temps réel entre deux utilisateurs |
 | Statistiques tatoueur | « Vues du profil » = valeur de démo ; demandes et taux de réponse calculés |
 | Notifications push | Architecture prête (canaux + `push` dans le SW) ; pas d'envoi serveur |
-| Abonnement tatoueur (179 €/an ou 19 €/mois, 1 semaine offerte) | **Réel via Stripe Checkout** à l'inscription (`/devenir-tatoueur/inscription`) si `STRIPE_SECRET_KEY` est défini, enregistré dans Neon ; slides + passage à l'annuel sur `/mon-abonnement`. L'espace pro `/pro` reste une démo (aucun encaissement) |
+| Abonnement tatoueur (179 €/an « 1 mois offert » ou 19 €/mois, paiement immédiat, sans essai) | **Réel via Stripe Checkout** à l'inscription (`/devenir-tatoueur/inscription`) si `STRIPE_SECRET_KEY` est défini, enregistré dans Neon ; slides + passage à l'annuel sur `/mon-abonnement`. L'espace pro `/pro` reste une démo (aucun encaissement) |
 | Mise en avant, commission (reste de la Phase 6) | Non implémentés — point d'extension `Artist.promoted` |
 
 ## Qualité

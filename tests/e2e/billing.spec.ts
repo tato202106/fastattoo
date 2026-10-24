@@ -9,11 +9,11 @@ test("inscription tatoueur : paiement obligatoire, forfait annuel à 179 € pro
   await expect(page).toHaveURL(/\/pro\/abonnement$/);
   await expect(page.getByRole("heading", { name: "Active ton profil pro" })).toBeVisible();
   await expect(page.getByRole("radio", { name: /Annuel/ })).toHaveAttribute("aria-checked", "true");
-  await expect(page.getByText("puis 179 € / an")).toBeVisible();
-  await page.getByRole("button", { name: "Commencer — 1 semaine offerte" }).click();
+  await expect(page.getByText("🎁 1 mois offert").first()).toBeVisible();
+  await page.getByRole("button", { name: "Payer 179 € pour 1 an" }).click();
   const sheet = page.getByRole("dialog", { name: "Paiement" });
   await expect(sheet.getByText("Mode démonstration")).toBeVisible();
-  await sheet.getByRole("button", { name: /Commencer — 1 semaine offerte/ }).click();
+  await sheet.getByRole("button", { name: /Payer 179 €/ }).click();
   await expect(page).toHaveURL(/\/pro\?bienvenue=1/);
   await expect(page.getByRole("link", { name: "Pro · Annuel" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Passe à l'annuel" })).toHaveCount(0);
@@ -41,14 +41,12 @@ test("abonné mensuel : slides pour passer à l'annuel, puis passage à 179 €"
   await expect(page.getByText(/Tu profites déjà du meilleur tarif/)).toBeVisible();
 });
 
-test("inscription réelle : formulaire → choix du forfait (annuel par défaut) → paiement Stripe", async ({ page }) => {
-  // API simulées : base Neon et Stripe ne sont pas disponibles pendant les tests.
-  await page.route("**/api/inscriptions-tatoueurs", (r) => r.fulfill({ json: { ok: true, signupId: 42 } }));
-  await page.route("**/api/billing/config", (r) => r.fulfill({ json: { mode: "stripe", hasSubscription: false } }));
-  let checkoutBody: Record<string, unknown> | null = null;
-  await page.route("**/api/billing/checkout", async (r) => {
-    checkoutBody = r.request().postDataJSON() as Record<string, unknown>;
-    await r.fulfill({ json: { url: "/devenir-tatoueur?stripe=simule" } });
+test("inscription : à la fin du formulaire, direction la page de paiement obligatoire", async ({ page }) => {
+  // API simulée : la base Neon n'est pas disponible pendant les tests.
+  let signupBody: Record<string, unknown> | null = null;
+  await page.route("**/api/inscriptions-tatoueurs", async (r) => {
+    signupBody = r.request().postDataJSON() as Record<string, unknown>;
+    await r.fulfill({ json: { ok: true, signupId: 42 } });
   });
 
   await page.goto("/devenir-tatoueur");
@@ -60,13 +58,19 @@ test("inscription réelle : formulaire → choix du forfait (annuel par défaut)
   await page.getByLabel("Mot de passe").fill("encre-noire-2026");
   await page.getByRole("button", { name: "Fine Line" }).click();
   await page.getByRole("checkbox").check();
-  await page.getByRole("button", { name: "Envoyer mon inscription" }).click();
+  const toPayment = page.waitForRequest((r) => r.url().includes("/devenir-tatoueur/paiement?inscription=1"));
+  await page.getByRole("button", { name: "Continuer vers le paiement" }).click();
+  await toPayment;
+  expect(signupBody).toMatchObject({ name: "Nora Ink", email: "nora@example.com", styles: ["fine-line"], consent: true });
+  // Sans compte réellement connecté (pas de base en test), la page de paiement exige une connexion.
+  await expect(page).toHaveURL(/\/espace-tatoueur\/connexion$/);
+});
 
-  await expect(page.getByRole("heading", { name: "Dernière étape : active ton profil" })).toBeVisible();
-  await expect(page.getByRole("radio", { name: /Annuel/ })).toHaveAttribute("aria-checked", "true");
-  await page.getByRole("button", { name: /Commencer — 1 semaine offerte/ }).click();
-  await expect(page).toHaveURL(/stripe=simule/);
-  expect(checkoutBody).toEqual({ plan: "annual", email: "nora@example.com", signupId: 42 });
+test("page de paiement : réservée à un compte tatoueur connecté", async ({ page }) => {
+  await page.goto("/devenir-tatoueur/paiement");
+  await expect(page).toHaveURL(/\/espace-tatoueur\/connexion$/);
+  const checkout = await page.request.post("/api/billing/checkout", { data: { plan: "annual" } });
+  expect([401, 409]).toContain(checkout.status()); // 409 si Stripe n'est pas configuré
 });
 
 test("mon abonnement : sans abonnement sur l'appareil", async ({ page }) => {

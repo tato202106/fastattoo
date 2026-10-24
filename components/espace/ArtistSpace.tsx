@@ -150,7 +150,7 @@ function SubscriptionSection() {
       <div className="rounded-2xl bg-surface p-4 shadow-card">
         <p className="font-semibold">Aucun abonnement actif</p>
         <p className="mt-1 text-sm text-muted">Active ton abonnement pour que ton profil puisse être mis en ligne.</p>
-        <Link href="/espace-tatoueur/abonnement" className={buttonClass("primary", "lg", "mt-3 w-full")}>
+        <Link href="/devenir-tatoueur/paiement" className={buttonClass("primary", "lg", "mt-3 w-full")}>
           Activer mon abonnement
         </Link>
       </div>

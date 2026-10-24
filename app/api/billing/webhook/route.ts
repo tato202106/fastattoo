@@ -39,7 +39,9 @@ export async function POST(req: Request) {
     }
     if (sub) {
       const updated = await applySubscriptionUpdate(toSubscriptionUpdate(sub));
-      await updateAccountSubscription(sub.id, sub.status);
+      const accountId = Number(sub.metadata?.account_id) || null;
+      const customer = typeof sub.customer === "string" ? sub.customer : (sub.customer?.id ?? null);
+      await updateAccountSubscription(sub.id, sub.status, { accountId, customerId: customer });
       console.info(`[stripe] ${type} ${sub.id} → ${sub.status} (${updated} inscription(s) mise(s) à jour)`);
     }
     return Response.json({ received: true });

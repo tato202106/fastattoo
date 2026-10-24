@@ -2,12 +2,12 @@
 
 import clsx from "clsx";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { buttonClass } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { SignupPayment } from "@/components/billing/SignupPayment";
-import { PRO_FREE_LABEL, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "@/lib/pro-offer";
+import { PAYMENT_PATH } from "@/lib/billing/access";
+import { PRO_ANNUAL_PERK, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "@/lib/pro-offer";
 import type { ArtistSignup } from "@/lib/signup";
 import { STYLES } from "@/lib/styles";
 import type { StyleSlug } from "@/lib/types";
@@ -29,20 +29,14 @@ function Field({ label, error, optional, children }: { label: string; error?: st
   );
 }
 
-const PENDING_KEY = "fastattoo-signup-pending";
-
 export function SignupForm() {
   const params = useSearchParams();
+  const router = useRouter();
   const referrerParam = params.get("parrain") ?? "";
-  // Retour de Stripe sans paiement : on revient directement à l'étape de paiement.
-  const [pending, setPending] = useState<{ signupId: number | null; email: string } | null>(() => {
-    if (typeof window === "undefined" || params.get("paiement") !== "annule") return null;
-    try {
-      return JSON.parse(sessionStorage.getItem(PENDING_KEY) ?? "null") as { signupId: number | null; email: string } | null;
-    } catch {
-      return null;
-    }
-  });
+  // Ancien lien de retour de Stripe : la page de paiement est désormais dédiée.
+  useEffect(() => {
+    if (params.get("paiement") === "annule") router.replace(`${PAYMENT_PATH}?annule=1`);
+  }, [params, router]);
   const [styles, setStyles] = useState<StyleSlug[]>([]);
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
@@ -61,15 +55,9 @@ export function SignupForm() {
       const res = await fetch("/api/inscriptions-tatoueurs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const data = (await res.json().catch(() => ({}))) as { errors?: Errors; error?: string; signupId?: number | null; existingAccount?: boolean };
       if (res.ok) {
-        const next = { signupId: data.signupId ?? null, email: String(fd.get("email") ?? "") };
-        try {
-          sessionStorage.setItem(PENDING_KEY, JSON.stringify(next));
-        } catch {
-          /* stockage indisponible */
-        }
-        setPending(next);
+        // Compte créé et connecté : paiement obligatoire pour la suite.
         setStatus("done");
-        window.scrollTo({ top: 0 });
+        router.push(`${PAYMENT_PATH}?inscription=1`);
         return;
       }
       if (data.errors) setErrors(data.errors);
@@ -82,10 +70,6 @@ export function SignupForm() {
     }
   }
 
-  // Inscription enregistrée → paiement (étape 2).
-  if (pending || status === "done") {
-    return <SignupPayment signupId={pending?.signupId ?? null} email={pending?.email ?? ""} cancelled={params.get("paiement") === "annule"} />;
-  }
 
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -94,7 +78,7 @@ export function SignupForm() {
       </Link>
       <h1 className="mt-1 font-display text-[28px] leading-tight font-bold">Inscris-toi sur Fastattoo</h1>
       <p className="mt-2 text-[15px] text-muted">
-        {PRO_FREE_LABEL}, puis {PRO_PRICE_ANNUAL} € par an (ou {PRO_PRICE_MONTHLY} € par mois). Étape 1 : tes infos, étape 2 : le paiement sécurisé.
+        {PRO_PRICE_ANNUAL} € par an ({PRO_ANNUAL_PERK}) ou {PRO_PRICE_MONTHLY} € par mois. Étape 1 : tes infos, étape 2 : le paiement sécurisé, obligatoire pour activer ton compte.
       </p>
       <p className="mt-2 text-sm">
         Déjà un compte ?{" "}
@@ -196,7 +180,7 @@ export function SignupForm() {
       {status === "error" && <p className="mt-4 rounded-xl bg-accent-soft p-3 text-sm text-accent">{message}</p>}
 
       <button type="submit" disabled={status === "sending"} className={buttonClass("primary", "lg", "mt-6 w-full")}>
-        {status === "sending" ? "Envoi…" : "Envoyer mon inscription"}
+        {status === "sending" ? "Envoi…" : status === "done" ? "Redirection vers le paiement…" : "Continuer vers le paiement"}
       </button>
     </form>
   );
