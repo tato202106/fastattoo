@@ -3,10 +3,10 @@
  * Modifier ici le prix, l'offre de lancement et le lien du formulaire d'inscription.
  */
 export const PRO_PRICE_MONTHLY = 19;
-export const PRO_FREE_MONTHS = 1;
+export const PRO_FREE_WEEKS = 1;
 
-/** « 1 mois offert » / « 3 mois offerts » (accord automatique). */
-export const PRO_FREE_LABEL = `${PRO_FREE_MONTHS} mois offert${PRO_FREE_MONTHS > 1 ? "s" : ""}`;
+/** « 1 semaine offerte » / « 2 semaines offertes » (accord automatique). */
+export const PRO_FREE_LABEL = `${PRO_FREE_WEEKS} semaine${PRO_FREE_WEEKS > 1 ? "s" : ""} offerte${PRO_FREE_WEEKS > 1 ? "s" : ""}`;
 
 /**
  * Lien du formulaire d'inscription (formulaire du site, ou un lien externe).
