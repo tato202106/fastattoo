@@ -1,4 +1,4 @@
-import { PRO_FREE_LABEL, PRO_FREE_WEEKS, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "../pro-offer";
+import { PRO_ANNUAL_PERK, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "../pro-offer";
 
 /**
  * Forfaits tatoueur (Phase 6 — monétisation).
@@ -24,18 +24,12 @@ export const PLANS: Record<PlanId, Plan> = {
 
 export const CURRENCY = "eur";
 
-/** Période d'essai à la première souscription (offre de lancement). */
-export const TRIAL_WEEKS = PRO_FREE_WEEKS;
-/** Durée envoyée à Stripe (`trial_period_days`). */
-export const TRIAL_DAYS = TRIAL_WEEKS * 7;
-export const TRIAL_LABEL = TRIAL_WEEKS > 0 ? PRO_FREE_LABEL : "";
+/** Argument commercial du forfait annuel (« 1 mois offert »). Pas d'essai gratuit : paiement immédiat. */
+export const ANNUAL_PERK = PRO_ANNUAL_PERK;
 
-/** Date du premier prélèvement (fin de l'essai) à partir d'aujourd'hui. */
-export function firstChargeDate(todayISO: string): string {
-  if (TRIAL_DAYS <= 0) return todayISO;
-  const [y, m, d] = todayISO.split("-").map(Number) as [number, number, number];
-  const date = new Date(y, m - 1, d + TRIAL_DAYS);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+/** L'argument reste vrai : l'annuel coûte moins que 11 mois au mensuel. */
+export function annualPerkIsTrue(): boolean {
+  return PLANS.annual.amount < PLANS.monthly.amount * 11;
 }
 
 /** Ce que le forfait inclut (fonctionnalités réellement disponibles dans l'app). */

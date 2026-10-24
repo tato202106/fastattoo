@@ -20,15 +20,15 @@ export async function GET(req: Request) {
     const signupId = Number(session.metadata?.signup_id);
     const customerId = (session as { customer?: string | null }).customer ?? null;
     if (signupId) await recordSignupSubscription(signupId, { plan: summary.plan, status: sub.status, subscriptionId: sub.id, customerId });
-    // Rattache l'abonnement au compte tatoueur créé avec cette inscription (jamais à un autre compte).
+    // Rattache l'abonnement au compte qui a payé (identifiant posé par le serveur dans la session Stripe).
     const account = await currentAccount();
-    const ownAccount = Boolean(account && signupId && account.signupId === signupId);
-    if (signupId) {
-      try {
-        await linkSubscription({ signupId }, { subscriptionId: sub.id, customerId, status: sub.status });
-      } catch (e) {
-        console.error("[abonnement] rattachement au compte impossible :", e);
-      }
+    const paidAccountId = Number(session.metadata?.account_id) || null;
+    const ownAccount = Boolean(account && ((paidAccountId && account.id === paidAccountId) || (signupId && account.signupId === signupId)));
+    try {
+      if (paidAccountId) await linkSubscription({ accountId: paidAccountId }, { subscriptionId: sub.id, customerId, status: sub.status });
+      else if (signupId) await linkSubscription({ signupId }, { subscriptionId: sub.id, customerId, status: sub.status });
+    } catch (e) {
+      console.error("[abonnement] rattachement au compte impossible :", e);
     }
     return Response.json({ paid: true, account: ownAccount, ...summary });
   } catch (e) {

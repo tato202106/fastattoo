@@ -287,17 +287,43 @@ export async function submitProfile(id: number): Promise<void> {
  * Rattache un abonnement payé au compte créé avec l'inscription d'origine
  * (identifiant d'inscription enregistré par le serveur dans la session Stripe).
  */
-export async function linkSubscription(where: { signupId: number }, sub: { subscriptionId: string; customerId: string | null; status: string }): Promise<void> {
+export async function linkSubscription(
+  where: { accountId: number } | { signupId: number },
+  sub: { subscriptionId: string; customerId: string | null; status: string },
+): Promise<void> {
   await ensureAccountTables();
-  await connect()`UPDATE artist_accounts SET stripe_subscription_id = ${sub.subscriptionId},
-      stripe_customer_id = COALESCE(${sub.customerId}, stripe_customer_id), subscription_status = ${sub.status}, updated_at = now()
-    WHERE signup_id = ${where.signupId}`;
+  const sql = connect();
+  if ("accountId" in where) {
+    await sql`UPDATE artist_accounts SET stripe_subscription_id = ${sub.subscriptionId},
+        stripe_customer_id = COALESCE(${sub.customerId}, stripe_customer_id), subscription_status = ${sub.status}, updated_at = now()
+      WHERE id = ${where.accountId}`;
+  } else {
+    await sql`UPDATE artist_accounts SET stripe_subscription_id = ${sub.subscriptionId},
+        stripe_customer_id = COALESCE(${sub.customerId}, stripe_customer_id), subscription_status = ${sub.status}, updated_at = now()
+      WHERE signup_id = ${where.signupId}`;
+  }
 }
 
-/** Statut reçu par webhook Stripe. */
-export async function updateAccountSubscription(subscriptionId: string, status: string): Promise<void> {
+/**
+ * Statut reçu par webhook Stripe. Si aucun compte ne porte encore cet abonnement
+ * (navigateur fermé avant la confirmation), on le rattache au compte indiqué dans
+ * les métadonnées posées par le serveur lors du paiement.
+ */
+export async function updateAccountSubscription(
+  subscriptionId: string,
+  status: string,
+  link?: { accountId?: number | null; customerId?: string | null },
+): Promise<void> {
   await ensureAccountTables();
-  await connect()`UPDATE artist_accounts SET subscription_status = ${status}, updated_at = now() WHERE stripe_subscription_id = ${subscriptionId}`;
+  const sql = connect();
+  const rows = (await sql`UPDATE artist_accounts SET subscription_status = ${status}, updated_at = now()
+    WHERE stripe_subscription_id = ${subscriptionId} RETURNING id`) as Row[];
+  if (rows.length === 0 && link?.accountId) {
+    await sql`UPDATE artist_accounts SET stripe_subscription_id = ${subscriptionId},
+        stripe_customer_id = COALESCE(${link.customerId ?? null}, stripe_customer_id), subscription_status = ${status}, updated_at = now()
+      WHERE id = ${link.accountId} AND (stripe_subscription_id IS NULL OR subscription_status IS NULL
+        OR subscription_status NOT IN ('active', 'trialing', 'past_due'))`;
+  }
 }
 
 /* ---------- Validation (admin) ---------- */

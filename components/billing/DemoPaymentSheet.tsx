@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Sheet } from "@/components/ui/Sheet";
-import { formatPrice, PLANS, TRIAL_LABEL, type PlanId } from "@/lib/billing/plans";
+import { formatPrice, PLANS, type PlanId } from "@/lib/billing/plans";
 
 /**
  * Récapitulatif + confirmation en mode démo (Stripe non configuré).
@@ -19,7 +19,7 @@ export function DemoPaymentSheet({ plan, onConfirm, onClose, upgrade }: { plan: 
       title={upgrade ? "Passer au forfait annuel" : "Paiement"}
       footer={
         <Button size="lg" className="w-full" onClick={onConfirm}>
-          <Icon name="lock" size={18} /> {!upgrade && TRIAL_LABEL ? `Commencer — ${TRIAL_LABEL}` : `Payer ${p ? formatPrice(p.amount) : ""}`}
+          <Icon name="lock" size={18} /> {`Payer ${p ? formatPrice(p.amount) : ""}`}
         </Button>
       }
     >
@@ -29,7 +29,7 @@ export function DemoPaymentSheet({ plan, onConfirm, onClose, upgrade }: { plan: 
             <div>
               <p className="font-semibold">Fastattoo Pro — {p.name}</p>
               <p className="text-sm text-muted">
-                {!upgrade && TRIAL_LABEL ? `${TRIAL_LABEL}, puis renouvelé chaque ${p.per}` : `Renouvelé automatiquement chaque ${p.per}`}, résiliable à tout moment
+                {`Renouvelé automatiquement chaque ${p.per}`}, résiliable à tout moment
               </p>
             </div>
             <p className="shrink-0 text-xl font-bold whitespace-nowrap">{formatPrice(p.amount)}</p>

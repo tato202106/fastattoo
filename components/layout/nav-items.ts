@@ -43,6 +43,7 @@ export function hidesBottomNav(pathname: string): boolean {
     pathname.startsWith("/pro/portfolio/ajouter") ||
     pathname.startsWith("/pro/onboarding") ||
     pathname.startsWith("/pro/abonnement") ||
+    pathname.startsWith("/devenir-tatoueur/paiement") ||
     pathname.startsWith("/connexion") ||
     pathname.startsWith("/espace-tatoueur/connexion") ||
     pathname.startsWith("/espace-tatoueur/mot-de-passe-oublie") ||

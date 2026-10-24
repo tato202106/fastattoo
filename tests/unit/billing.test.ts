@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { annualSavings, firstChargeDate, formatPrice, isPlanId, PLANS, renewalDate, TRIAL_DAYS, TRIAL_LABEL } from "@/lib/billing/plans";
+import { ANNUAL_PERK, annualPerkIsTrue, annualSavings, formatPrice, isPlanId, PLANS, renewalDate } from "@/lib/billing/plans";
 import { PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "@/lib/pro-offer";
 
 describe("forfaits tatoueur", () => {
@@ -21,12 +21,10 @@ describe("forfaits tatoueur", () => {
     expect(formatPrice(s.perMonth)).toBe("14,92 €");
   });
 
-  it("premier prélèvement après l'offre de lancement", () => {
-    // Offre de lancement : 1 semaine offerte = 7 jours d'essai Stripe.
-    expect(TRIAL_DAYS).toBe(7);
-    expect(TRIAL_LABEL).toBe("1 semaine offerte");
-    expect(firstChargeDate("2026-10-17")).toBe("2026-10-24");
-    expect(firstChargeDate("2026-12-28")).toBe("2027-01-04");
+  it("« 1 mois offert » sur l'annuel : argument vrai (moins cher que 11 mois au mensuel)", () => {
+    expect(ANNUAL_PERK).toBe("1 mois offert");
+    expect(annualPerkIsTrue()).toBe(true);
+    expect(PLANS.annual.amount).toBeLessThan(PLANS.monthly.amount * 11);
   });
 
   it("date de renouvellement", () => {

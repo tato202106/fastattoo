@@ -1,30 +1,40 @@
+import { linkSubscription } from "@/lib/accounts/db";
 import { currentAccount } from "@/lib/accounts/session";
-import { isPlanId, TRIAL_DAYS } from "@/lib/billing/plans";
-import { createCheckoutSession, stripeEnabled } from "@/lib/billing/stripe";
+import { hasPaidAccess, PAYMENT_PATH } from "@/lib/billing/access";
+import { isPlanId } from "@/lib/billing/plans";
+import { createCheckoutSession, customerId, findLiveSubscriptionForAccount, stripeEnabled } from "@/lib/billing/stripe";
 
 /**
- * Paiement de l'inscription d'un tatoueur : crée une session Stripe Checkout
- * (page de paiement hébergée par Stripe) et renvoie son URL.
+ * Paiement de l'abonnement d'un tatoueur connecté : crée une session Stripe
+ * Checkout (page de paiement hébergée par Stripe) et renvoie son URL.
+ * L'abonnement est toujours rattaché au compte connecté (jamais à un autre).
  */
 export async function POST(req: Request) {
   if (!stripeEnabled()) return Response.json({ mode: "demo" }, { status: 409 });
-  const body = (await req.json().catch(() => null)) as { plan?: unknown; email?: unknown; signupId?: unknown } | null;
+  const body = (await req.json().catch(() => null)) as { plan?: unknown } | null;
   if (!body || !isPlanId(body.plan)) return Response.json({ error: "Forfait invalide" }, { status: 400 });
-  const email = typeof body.email === "string" && /\S+@\S+\.\S+/.test(body.email) ? body.email.slice(0, 200) : undefined;
-  // Tatoueur connecté : toujours son inscription (on ignore celle envoyée par le navigateur).
+
   const account = await currentAccount();
-  const fromBody = typeof body.signupId === "number" && Number.isInteger(body.signupId) && body.signupId > 0 ? body.signupId : undefined;
-  const signupId = account ? (account.signupId ?? undefined) : fromBody;
+  if (!account) return Response.json({ error: "Connecte-toi à ton espace tatoueur pour payer ton abonnement." }, { status: 401 });
+  if (hasPaidAccess(account.subscriptionStatus)) return Response.json({ already: true, redirect: "/espace-tatoueur" });
+
   try {
+    // Déjà payé mais pas encore rattaché (confirmation interrompue) : on rattache au lieu de refaire payer.
+    const existing = await findLiveSubscriptionForAccount(account.id).catch(() => null);
+    if (existing) {
+      await linkSubscription({ accountId: account.id }, { subscriptionId: existing.id, customerId: customerId(existing), status: existing.status });
+      return Response.json({ already: true, redirect: "/espace-tatoueur?bienvenue=1" });
+    }
+    const signupId = account.signupId ?? undefined;
     const session = await createCheckoutSession({
       plan: body.plan,
-      email,
+      email: account.email,
       signupId,
-      reference: signupId ? `signup-${signupId}` : "signup",
+      accountId: account.id,
+      reference: `account-${account.id}`,
       origin: new URL(req.url).origin,
       successPath: "/devenir-tatoueur/inscription/confirmation",
-      cancelPath: "/devenir-tatoueur/inscription?paiement=annule",
-      trialDays: TRIAL_DAYS,
+      cancelPath: `${PAYMENT_PATH}?annule=1`,
     });
     return Response.json({ url: session.url });
   } catch (e) {

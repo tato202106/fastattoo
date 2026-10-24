@@ -1,15 +1,16 @@
 /**
  * Offre d'abonnement tatoueur affichée sur /devenir-tatoueur.
- * Modifier ici le prix, l'offre de lancement et le lien du formulaire d'inscription.
+ * Modifier ici les prix, l'argument de l'annuel et le lien du formulaire d'inscription.
  */
 export const PRO_PRICE_MONTHLY = 19;
 /** Forfait annuel (mis en avant à l'inscription et proposé aux abonnés mensuels). */
 export const PRO_PRICE_ANNUAL = 179;
-/** Offre de lancement : semaines offertes avant le premier prélèvement (période d'essai Stripe). 0 = paiement immédiat. */
-export const PRO_FREE_WEEKS = 1;
-
-/** « 1 semaine offerte » / « 2 semaines offertes » (accord automatique). */
-export const PRO_FREE_LABEL = `${PRO_FREE_WEEKS} semaine${PRO_FREE_WEEKS > 1 ? "s" : ""} offerte${PRO_FREE_WEEKS > 1 ? "s" : ""}`;
+/**
+ * Argument mis en avant sur le forfait annuel (pas de période d'essai : le
+ * paiement est immédiat). Vrai tant que l'annuel coûte moins que 11 mois au
+ * mensuel (179 € < 11 × 19 € = 209 €), vérifié par les tests.
+ */
+export const PRO_ANNUAL_PERK = "1 mois offert";
 
 /**
  * Lien du formulaire d'inscription (formulaire du site, ou un lien externe).

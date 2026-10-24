@@ -3,12 +3,12 @@ import Link from "next/link";
 import { buttonClass } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { annualSavings, formatPrice } from "@/lib/billing/plans";
-import { PRO_FREE_LABEL, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL } from "@/lib/pro-offer";
+import { PRO_ANNUAL_PERK, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL } from "@/lib/pro-offer";
 import { SPONSOR_BOOST_MONTHS } from "@/lib/referral";
 
 export const metadata: Metadata = {
   title: "Tatoueurs : rejoins Fastattoo",
-  description: `Sois visible auprès des personnes qui cherchent un tatoueur près de chez elles. ${PRO_FREE_LABEL}, puis ${PRO_PRICE_ANNUAL} € par an ou ${PRO_PRICE_MONTHLY} € par mois.`,
+  description: `Sois visible auprès des personnes qui cherchent un tatoueur près de chez elles. ${PRO_PRICE_ANNUAL} € par an (${PRO_ANNUAL_PERK}) ou ${PRO_PRICE_MONTHLY} € par mois.`,
 };
 
 const BENEFITS: { icon: IconName; title: string; text: string }[] = [
@@ -121,11 +121,10 @@ export default function BecomeArtistPage() {
         <h2 id="tarif" className="text-xl font-semibold">
           Deux forfaits, sans surprise
         </h2>
-        <p className="mt-2 inline-flex rounded-full bg-accent-soft px-3 py-1 text-sm font-semibold text-accent">{PRO_FREE_LABEL} pour les premiers inscrits</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="relative rounded-[var(--radius-card)] border-2 border-accent bg-surface p-5">
             <span className="absolute -top-3 left-5 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-accent-fg">
-              Recommandé · −{savings.percent} %
+              Recommandé · 🎁 {PRO_ANNUAL_PERK}
             </span>
             <p className="font-semibold">Annuel</p>
             <p className="mt-1">
@@ -135,6 +134,7 @@ export default function BecomeArtistPage() {
             <p className="mt-1 text-sm text-muted">
               Soit {formatPrice(savings.perMonth)} par mois · {formatPrice(savings.saved)} d&apos;économie par an
             </p>
+            <p className="mt-3 inline-flex rounded-full bg-accent-soft px-3 py-1 text-sm font-bold text-accent">{PRO_ANNUAL_PERK} par rapport au mensuel</p>
           </div>
           <div className="rounded-[var(--radius-card)] border border-border bg-surface p-5">
             <p className="font-semibold">Mensuel</p>

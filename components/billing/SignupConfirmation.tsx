@@ -37,11 +37,6 @@ export function SignupConfirmation() {
       .then(async (r) => {
         const data = (await r.json()) as { paid?: boolean; account?: boolean } & Verified;
         if (!r.ok || !data.paid) throw new Error();
-        try {
-          sessionStorage.removeItem("fastattoo-signup-pending");
-        } catch {
-          /* ignore */
-        }
         // Compte tatoueur connecté : direction son espace pour compléter son profil.
         if (data.account) {
           router.replace("/espace-tatoueur?bienvenue=1");
@@ -99,7 +94,7 @@ export function SubscribedView({ initial, welcome, returnTo }: { initial: Verifi
         ) : sub.cancelAtPeriodEnd && sub.renewsAt ? (
           <p className="mt-1 text-sm font-medium text-accent">Résiliation programmée : ton abonnement s&apos;arrête le {formatLongDate(sub.renewsAt)}</p>
         ) : sub.trialEndsAt ? (
-          <p className="mt-1 text-sm text-muted">Offre de lancement : premier prélèvement le {formatLongDate(sub.trialEndsAt)}</p>
+          <p className="mt-1 text-sm text-muted">Premier prélèvement le {formatLongDate(sub.trialEndsAt)}</p>
         ) : sub.renewsAt ? (
           <p className="mt-1 text-sm text-muted">Prochain renouvellement le {formatLongDate(sub.renewsAt)}</p>
         ) : null}

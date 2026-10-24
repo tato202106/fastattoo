@@ -45,7 +45,16 @@ function priceParams(plan: PlanId, prefix: string): Record<string, string | numb
   };
 }
 
-export async function createCheckoutSession(opts: { plan: PlanId; email?: string; reference: string; signupId?: number; origin: string; successPath: string; cancelPath: string; trialDays: number }) {
+export async function createCheckoutSession(opts: {
+  plan: PlanId;
+  email?: string;
+  reference: string;
+  signupId?: number;
+  accountId?: number;
+  origin: string;
+  successPath: string;
+  cancelPath: string;
+}) {
   return stripe<{ id: string; url: string }>("POST", "/checkout/sessions", {
     mode: "subscription",
     locale: "fr",
@@ -55,9 +64,10 @@ export async function createCheckoutSession(opts: { plan: PlanId; email?: string
     client_reference_id: opts.reference,
     "metadata[plan]": opts.plan,
     "metadata[signup_id]": opts.signupId,
+    "metadata[account_id]": opts.accountId,
     "subscription_data[metadata][plan]": opts.plan,
     "subscription_data[metadata][signup_id]": opts.signupId,
-    "subscription_data[trial_period_days]": opts.trialDays > 0 ? opts.trialDays : undefined,
+    "subscription_data[metadata][account_id]": opts.accountId,
     allow_promotion_codes: "true",
     success_url: `${opts.origin}${opts.successPath}${opts.successPath.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${opts.origin}${opts.cancelPath}`,
@@ -81,6 +91,19 @@ export async function retrieveCheckoutSession(id: string) {
     `/checkout/sessions/${encodeURIComponent(id)}`,
     { "expand[]": "subscription" },
   );
+}
+
+/**
+ * Abonnement en cours (actif, à l'essai ou en retard de paiement) déjà créé pour
+ * ce compte : évite un second paiement si le rattachement n'a pas encore eu lieu
+ * (navigateur fermé avant la confirmation, webhook en retard…).
+ */
+export async function findLiveSubscriptionForAccount(accountId: number): Promise<StripeSubscription | null> {
+  const res = await stripe<{ data: StripeSubscription[] }>("GET", "/subscriptions/search", {
+    query: `metadata['account_id']:'${accountId}'`,
+    limit: 10,
+  });
+  return res.data.find((s) => ["active", "trialing", "past_due"].includes(s.status)) ?? null;
 }
 
 export async function retrieveSubscription(id: string) {
