@@ -31,16 +31,26 @@ export function PaymentSetup({ diag, check }: { diag: BillingDiagnostics; check:
         <Row ok={diag.secretKey.ok && Boolean(check?.keyWorks)} title="Clé secrète Stripe">
           {!diag.secretKey.ok ? (
             <>
-              {diag.secretKey.problem} Sur Vercel → Settings → Environment Variables, ajoute <code>STRIPE_SECRET_KEY</code> (clé <code>sk_live_…</code> de Stripe → Développeurs → Clés API) pour
+              {diag.secretKey.problem} Sur Vercel → Settings → Environment Variables, ajoute <code>STRIPE_SECRET_KEY</code> (clé <code>sk_live_…</code> ou clé restreinte <code>rk_live_…</code> de Stripe → Développeurs → Clés API) pour
               l&apos;environnement <strong>Production</strong>, puis <strong>redéploie</strong>.
             </>
           ) : check && !check.keyWorks ? (
-            <>Stripe refuse la clé ({check.keyError}). Vérifie qu&apos;elle est complète et non révoquée.</>
+            <>
+              Stripe refuse la clé ({check.keyError}). Vérifie qu&apos;elle est complète et non révoquée
+              {diag.secretKey.restricted && <>, et que la clé restreinte a bien les autorisations ci-dessous</>}.
+            </>
           ) : (
             <>
               Trouvée dans <code>{diag.secretKey.variable}</code>, mode <strong>{diag.secretKey.mode === "live" ? "réel (live)" : "test"}</strong>
-              {diag.secretKey.mode === "test" && " : les paiements ne sont pas encaissés pour de vrai"}.
+              {diag.secretKey.mode === "test" && " : les paiements ne sont pas encaissés pour de vrai"}
+              {diag.secretKey.restricted && " (clé restreinte)"}.
             </>
+          )}
+          {diag.secretKey.restricted && (
+            <p className="mt-1">
+              Autorisations nécessaires sur la clé restreinte : <strong>Checkout Sessions</strong> (écriture), <strong>Subscriptions</strong> (écriture),{" "}
+              <strong>Prices</strong> et <strong>Products</strong> (lecture), <strong>Customer portal</strong> (écriture).
+            </p>
           )}
         </Row>
         <Row ok={diag.database} title="Base de données (comptes tatoueurs)">
@@ -51,10 +61,17 @@ export function PaymentSetup({ diag, check }: { diag: BillingDiagnostics; check:
           const c = check?.plans[plan];
           const p = PLANS[plan];
           const label = `Forfait ${p.name.toLowerCase()} (${formatPrice(p.amount)} / ${p.per})`;
+          if (!d.variable && c?.auto) {
+            return (
+              <Row key={plan} ok={c.found && c.matches !== false} warn={c.matches === false} title={label}>
+                Retrouvé automatiquement dans ton compte Stripe{c.detail ? ` : ${c.detail}` : ""}.
+              </Row>
+            );
+          }
           if (!d.variable) {
             return (
               <Row key={plan} ok warn title={label}>
-                Aucun produit Stripe indiqué : le prix est créé automatiquement à chaque paiement. Pour utiliser ton produit Stripe, ajoute{" "}
+                Aucun prix Stripe à {formatPrice(p.amount)} / {p.per} trouvé dans ton compte : le prix est défini automatiquement à chaque paiement. Pour utiliser ton produit Stripe, ajoute{" "}
                 <code>{plan === "annual" ? "STRIPE_PRICE_ANNUAL" : "STRIPE_PRICE_MONTHLY"}</code> (identifiant <code>price_…</code>).
               </Row>
             );
@@ -71,7 +88,7 @@ export function PaymentSetup({ diag, check }: { diag: BillingDiagnostics; check:
             <>Secret trouvé dans <code>{diag.webhook.variable}</code>.</>
           ) : (
             <>
-              Facultatif pour encaisser, conseillé pour la suite : Stripe → Développeurs → Webhooks → URL <code>/api/billing/webhook</code>, puis ajoute{" "}
+              Facultatif pour encaisser, conseillé pour la suite : Stripe → Développeurs → Webhooks → URL <code>/api/billing/webhook</code> (ou <code>/api/stripe/webhook</code>), puis ajoute{" "}
               <code>STRIPE_WEBHOOK_SECRET</code> (<code>whsec_…</code>).
             </>
           )}

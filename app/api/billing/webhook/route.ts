@@ -2,13 +2,14 @@ import { stripeWebhookSecret } from "@/lib/billing/env";
 import { updateAccountSubscription } from "@/lib/accounts/db";
 import { applySubscriptionUpdate } from "@/lib/billing/signups-db";
 import { retrieveSubscription, stripeEnabled } from "@/lib/billing/stripe";
-import { INVOICE_EVENTS, invoiceSubscriptionId, SUBSCRIPTION_EVENTS, toSubscriptionUpdate, verifySignature, type WebhookSubscription } from "@/lib/billing/webhook";
+import { CHECKOUT_EVENTS, INVOICE_EVENTS, invoiceSubscriptionId, SUBSCRIPTION_EVENTS, toSubscriptionUpdate, verifySignature, type WebhookSubscription } from "@/lib/billing/webhook";
 
 /**
  * Webhook Stripe : tient à jour l'abonnement des tatoueurs dans Neon
  * (fin d'essai, renouvellement, échec de paiement, résiliation…).
- * À déclarer dans Stripe → Développeurs → Webhooks, URL `/api/billing/webhook`,
- * avec le secret de signature dans STRIPE_WEBHOOK_SECRET.
+ * À déclarer dans Stripe → Développeurs → Webhooks, URL `/api/billing/webhook`
+ * (ou `/api/stripe/webhook`, `/api/webhooks/stripe`, `/api/webhook`), avec le
+ * secret de signature dans STRIPE_WEBHOOK_SECRET.
  */
 export async function POST(req: Request) {
   const secret = stripeWebhookSecret();
@@ -36,6 +37,11 @@ export async function POST(req: Request) {
     } else if (INVOICE_EVENTS.has(type)) {
       // Relire l'abonnement : son état (actif, impayé…) après la facture.
       const subId = invoiceSubscriptionId(object as Parameters<typeof invoiceSubscriptionId>[0]);
+      if (subId) sub = await retrieveSubscription(subId);
+    } else if (CHECKOUT_EVENTS.has(type)) {
+      // Paiement validé sur Stripe Checkout : rattache l'abonnement même si le tatoueur a fermé la page.
+      const raw = (object as { subscription?: string | { id: string } | null }).subscription;
+      const subId = typeof raw === "string" ? raw : (raw?.id ?? null);
       if (subId) sub = await retrieveSubscription(subId);
     }
     if (sub) {
