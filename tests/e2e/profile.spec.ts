@@ -7,15 +7,17 @@ test("profil : identité, portfolio, CTA toujours accessible", async ({ page }) 
   await page.goto("/tatoueurs/lea-ink");
   await expect(page.getByRole("heading", { level: 1, name: "Léa Ink" })).toBeVisible();
   await expect(page.getByText("Tatoueuse · Nantes").first()).toBeVisible();
-  await expect(page.getByText("Vérifiée").first()).toBeVisible();
+  // Profils d'exemple (lib/showcase.ts) : badge « Profil exemple » au lieu de « Vérifiée ».
+  await expect(page.getByText(/Vérifiée|Profil exemple/).first()).toBeVisible();
   await expectNoHorizontalScroll(page);
   const cta = page.getByRole("link", { name: "Demander un projet" }).first();
   await expect(cta).toBeInViewport();
   if (isMobile(page)) {
-    await page.getByRole("heading", { name: /Avis/ }).scrollIntoViewIfNeeded();
+    await page.getByRole("heading", { name: "Localisation", exact: true }).scrollIntoViewIfNeeded();
     await expect(cta).toBeInViewport();
   }
-  for (const s of ["Styles", "À propos", "Localisation", "Prix", "Disponibilités"]) {
+  // « Disponibilités » et « Avis » sont masqués pour les profils d'exemple (lib/showcase.ts).
+  for (const s of ["Styles", "À propos", "Localisation", "Prix"]) {
     await expect(page.getByRole("heading", { name: s, exact: true })).toBeAttached();
   }
 });

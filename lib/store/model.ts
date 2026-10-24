@@ -130,3 +130,14 @@ export interface ArtistProfileDraft {
 
 /** Créneaux standards d'une journée de travail (calendrier simplifié, SPEC §24). */
 export const DAY_SLOTS = ["10:00", "14:00", "17:00"] as const;
+
+/** Abonnement tatoueur (Phase 6). `provider: "demo"` = aucun encaissement réel. */
+export interface ArtistSubscription {
+  plan: "monthly" | "annual";
+  status: "active";
+  provider: "stripe" | "demo";
+  startedAt: string; // YYYY-MM-DD
+  renewsAt: string; // YYYY-MM-DD (prochain prélèvement)
+  /** Fin de l'offre de lancement (semaine offerte), si en cours. */
+  trialEndsAt?: string | null;
+}

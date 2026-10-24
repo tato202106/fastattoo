@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { UpgradePrompt } from "@/components/billing/UpgradePrompt";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { PLANS } from "@/lib/billing/plans";
 import { formatTime, relativeDay } from "@/lib/dates";
 import { useApp } from "@/lib/store/app";
 import { styleLabel, zoneLabel } from "@/lib/styles";
@@ -25,6 +27,7 @@ export function Dashboard() {
   const d = useArtistData();
   const additions = useApp((s) => s.portfolioAdditions.filter((p) => p.artistId === d.artistId).length);
   const firstName = d.name.split(" ")[0];
+  const subscription = useApp((s) => s.subscription);
 
   // Statistiques simples. ⚠️ Vues et taux de réponse : valeurs de démonstration
   // (aucun suivi d'audience n'existe encore côté serveur).
@@ -35,7 +38,14 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6 px-4 lg:px-0">
-      <h1 className="font-display pt-[calc(var(--safe-top)+14px)] text-[30px] leading-tight font-bold lg:pt-8">Bonjour {firstName} 👋</h1>
+      <div className="flex items-end justify-between gap-3 pt-[calc(var(--safe-top)+14px)] lg:pt-8">
+        <h1 className="font-display text-[30px] leading-tight font-bold">Bonjour {firstName} 👋</h1>
+        {subscription && (
+          <Link href="/pro/abonnement" className="tap mb-1 inline-flex h-9 items-center rounded-full border border-border px-3 text-xs font-semibold">
+            Pro · {PLANS[subscription.plan].name}
+          </Link>
+        )}
+      </div>
 
       <div className="grid grid-cols-3 gap-2 rounded-2xl bg-fg p-4 text-bg">
         <div>
@@ -83,6 +93,8 @@ export function Dashboard() {
       <Link href="/pro/portfolio/ajouter" className="tap flex h-14 items-center justify-center gap-2 rounded-2xl bg-accent font-semibold text-accent-fg">
         <Icon name="plus" size={22} /> Ajouter un tatouage
       </Link>
+
+      <UpgradePrompt />
 
       {d.newRequests.length > 0 && (
         <section>

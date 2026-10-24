@@ -3,6 +3,9 @@
  * Modifier ici le prix, l'offre de lancement et le lien du formulaire d'inscription.
  */
 export const PRO_PRICE_MONTHLY = 19;
+/** Forfait annuel (mis en avant à l'inscription et proposé aux abonnés mensuels). */
+export const PRO_PRICE_ANNUAL = 179;
+/** Offre de lancement : semaines offertes avant le premier prélèvement (période d'essai Stripe). 0 = paiement immédiat. */
 export const PRO_FREE_WEEKS = 1;
 
 /** « 1 semaine offerte » / « 2 semaines offertes » (accord automatique). */

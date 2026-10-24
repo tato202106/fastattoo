@@ -42,6 +42,7 @@ export function hidesBottomNav(pathname: string): boolean {
     /^\/pro\/demandes\/[^/]+/.test(pathname) ||
     pathname.startsWith("/pro/portfolio/ajouter") ||
     pathname.startsWith("/pro/onboarding") ||
+    pathname.startsWith("/pro/abonnement") ||
     pathname.startsWith("/connexion") ||
     pathname.startsWith("/offline")
   );

@@ -28,6 +28,7 @@ export function Onboarding() {
   const router = useRouter();
   const saved = useApp((s) => s.artistProfile);
   const save = useApp((s) => s.saveArtistProfile);
+  const subscribed = useApp((s) => s.subscription != null);
   const [step, setStep] = useState(1);
   const [p, setP] = useState<ArtistProfileDraft>(saved ?? DEFAULTS);
   const set = <K extends keyof ArtistProfileDraft>(k: K, v: ArtistProfileDraft[K]) => setP((x) => ({ ...x, [k]: v }));
@@ -118,10 +119,11 @@ export function Onboarding() {
             onClick={() => {
               if (step < total) return setStep(step + 1);
               save({ ...p, onboarded: true });
-              router.replace("/pro");
+              // Inscription : profil → paiement → dashboard.
+              router.replace(subscribed ? "/pro" : "/pro/abonnement");
             }}
           >
-            {step < total ? "Continuer" : "Enregistrer mon profil"}
+            {step < total ? "Continuer" : subscribed ? "Enregistrer mon profil" : "Continuer vers le paiement"}
           </Button>
         </div>
       </footer>

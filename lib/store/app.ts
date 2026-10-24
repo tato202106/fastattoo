@@ -15,11 +15,13 @@ import { addDays, diffDays, formatTime, relativeDay, todayISO } from "../dates";
 import { dispatchExternal } from "../notifications/channels";
 import { styleLabel, zoneLabel } from "../styles";
 import type { ImageAsset } from "../types";
+import { firstChargeDate, renewalDate, TRIAL_DAYS } from "../billing/plans";
 import { CLIENT_ID, DEMO_CLIENT_NAME } from "./ids";
 import type {
   Appointment,
   AppNotification,
   ArtistProfileDraft,
+  ArtistSubscription,
   CalendarBlock,
   Conversation,
   LocalPortfolioItem,
@@ -51,6 +53,10 @@ interface AppState {
   reviews: LocalReview[];
   artistProfile: ArtistProfileDraft | null;
   installDismissedAt: number | null;
+  /** Abonnement du tatoueur connecté (null = pas encore payé → page d'abonnement). */
+  subscription: ArtistSubscription | null;
+  /** Dernière fois que les slides « passer à l'annuel » ont été fermées. */
+  upsellDismissedAt: number | null;
   /** Dernière notification reçue pendant la session (affichée en toast). */
   toast: AppNotification | null;
   /** Données de démo chargées (une seule fois, à la première visite). */
@@ -78,6 +84,8 @@ interface AppState {
   markNotificationsRead(role: Role, recipientId: string): void;
   dismissToast(): void;
   dismissInstall(): void;
+  activateSubscription(sub: Pick<ArtistSubscription, "plan" | "provider"> & { renewsAt?: string | null; trialEndsAt?: string | null }): void;
+  dismissUpsell(): void;
   ensureReminders(): void;
   /** Charge les données de démo (module importé à la demande, hors du bundle initial). */
   seedDemo(force?: boolean): Promise<void>;
@@ -142,6 +150,8 @@ export const useApp = create<AppState>()(
         ...emptyData(),
         artistProfile: null,
         installDismissedAt: null,
+        subscription: null,
+        upsellDismissedAt: null,
         toast: null,
         seeded: false,
 
@@ -336,6 +346,35 @@ export const useApp = create<AppState>()(
         },
         dismissToast() {
           set({ toast: null });
+        },
+        activateSubscription({ plan, provider, renewsAt, trialEndsAt }) {
+          const today = todayISO();
+          const previous = get().subscription;
+          // Première souscription : offre de lancement (semaine offerte) avant le premier prélèvement.
+          const trial = trialEndsAt !== undefined ? trialEndsAt : !previous && TRIAL_DAYS > 0 ? firstChargeDate(today) : null;
+          set({
+            subscription: {
+              plan,
+              provider,
+              status: "active",
+              startedAt: previous?.startedAt ?? today,
+              renewsAt: renewsAt ?? trial ?? renewalDate(today, plan),
+              trialEndsAt: trial,
+            },
+          });
+          const session = get().session;
+          if (session?.role === "artist") {
+            notify({
+              audience: "artist",
+              recipientId: session.userId,
+              title: previous ? "Tu es passé·e au forfait annuel 🎉" : "Abonnement activé, bienvenue !",
+              body: plan === "annual" ? "179 € pour 12 mois" : "Forfait mensuel",
+              href: "/pro/abonnement",
+            });
+          }
+        },
+        dismissUpsell() {
+          set({ upsellDismissedAt: Date.now() });
         },
         dismissInstall() {
           set({ installDismissedAt: Date.now() });
