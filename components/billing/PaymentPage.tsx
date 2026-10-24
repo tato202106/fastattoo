@@ -1,6 +1,7 @@
 "use client";
 
 import clsx from "clsx";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
@@ -65,13 +66,18 @@ export function PaymentPage({
 
   const header = (
     <div>
-      <div className="flex items-center justify-between gap-3">
-        <p className="inline-flex items-center gap-1.5 rounded-full bg-success/12 px-3 py-1 text-sm font-semibold text-success">
+      <div className="flex items-center justify-between gap-2">
+        <p className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-success/12 px-3 py-1 text-sm font-semibold whitespace-nowrap text-success">
           <Icon name="check" size={16} /> {fromSignup ? "Compte créé" : "Compte tatoueur"}
         </p>
-        <button type="button" onClick={logout} className="tap inline-flex h-11 items-center gap-1.5 px-1 text-sm text-muted">
-          <Icon name="logout" size={16} /> Déconnexion
-        </button>
+        <div className="flex items-center gap-2 whitespace-nowrap">
+          <Link href="/" className="tap inline-flex h-11 items-center gap-1.5 px-1 text-sm text-muted">
+            <Icon name="home" size={16} /> Accueil
+          </Link>
+          <button type="button" onClick={logout} className="tap inline-flex h-11 min-w-11 items-center justify-center gap-1.5 px-1 text-sm text-muted">
+            <Icon name="logout" size={16} /> <span className="max-sm:sr-only">Déconnexion</span>
+          </button>
+        </div>
       </div>
       {fromSignup && (
         <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-muted" aria-label="Étape 2 sur 2">
@@ -178,6 +184,14 @@ export function PaymentPage({
           ))}
         </ul>
       </section>
+
+      <p className="text-center text-sm text-muted">
+        Pas tout de suite ?{" "}
+        <Link href="/" className="font-semibold text-fg underline">
+          Continuer vers l&apos;accueil
+        </Link>
+        <span className="block">Ton compte est gardé : tu pourras t&apos;abonner depuis ton espace tatoueur.</span>
+      </p>
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg/95 px-4 pt-3 pb-[calc(12px+var(--safe-bottom))] backdrop-blur-md">
         <div className="mx-auto max-w-xl">
