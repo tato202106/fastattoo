@@ -15,7 +15,7 @@ import { addDays, diffDays, formatTime, relativeDay, todayISO } from "../dates";
 import { dispatchExternal } from "../notifications/channels";
 import { styleLabel, zoneLabel } from "../styles";
 import type { ImageAsset } from "../types";
-import { firstChargeDate, renewalDate, TRIAL_MONTHS } from "../billing/plans";
+import { firstChargeDate, renewalDate, TRIAL_DAYS } from "../billing/plans";
 import { CLIENT_ID, DEMO_CLIENT_NAME } from "./ids";
 import type {
   Appointment,
@@ -350,8 +350,8 @@ export const useApp = create<AppState>()(
         activateSubscription({ plan, provider, renewsAt, trialEndsAt }) {
           const today = todayISO();
           const previous = get().subscription;
-          // Première souscription : offre de lancement (mois offerts) avant le premier prélèvement.
-          const trial = trialEndsAt !== undefined ? trialEndsAt : !previous && TRIAL_MONTHS > 0 ? firstChargeDate(today) : null;
+          // Première souscription : offre de lancement (semaine offerte) avant le premier prélèvement.
+          const trial = trialEndsAt !== undefined ? trialEndsAt : !previous && TRIAL_DAYS > 0 ? firstChargeDate(today) : null;
           set({
             subscription: {
               plan,

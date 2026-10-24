@@ -5,11 +5,11 @@
 export const PRO_PRICE_MONTHLY = 19;
 /** Forfait annuel (mis en avant à l'inscription et proposé aux abonnés mensuels). */
 export const PRO_PRICE_ANNUAL = 179;
-/** Offre de lancement : mois offerts avant le premier prélèvement (période d'essai Stripe). 0 = paiement immédiat. */
-export const PRO_FREE_MONTHS = 1;
+/** Offre de lancement : semaines offertes avant le premier prélèvement (période d'essai Stripe). 0 = paiement immédiat. */
+export const PRO_FREE_WEEKS = 1;
 
-/** « 1 mois offert » / « 3 mois offerts » (accord automatique). */
-export const PRO_FREE_LABEL = `${PRO_FREE_MONTHS} mois offert${PRO_FREE_MONTHS > 1 ? "s" : ""}`;
+/** « 1 semaine offerte » / « 2 semaines offertes » (accord automatique). */
+export const PRO_FREE_LABEL = `${PRO_FREE_WEEKS} semaine${PRO_FREE_WEEKS > 1 ? "s" : ""} offerte${PRO_FREE_WEEKS > 1 ? "s" : ""}`;
 
 /**
  * Lien du formulaire d'inscription (formulaire du site, ou un lien externe).

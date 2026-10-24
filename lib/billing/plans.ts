@@ -1,4 +1,4 @@
-import { PRO_FREE_MONTHS, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "../pro-offer";
+import { PRO_FREE_LABEL, PRO_FREE_WEEKS, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "../pro-offer";
 
 /**
  * Forfaits tatoueur (Phase 6 — monétisation).
@@ -25,15 +25,16 @@ export const PLANS: Record<PlanId, Plan> = {
 export const CURRENCY = "eur";
 
 /** Période d'essai à la première souscription (offre de lancement). */
-export const TRIAL_MONTHS = PRO_FREE_MONTHS;
-export const TRIAL_DAYS = TRIAL_MONTHS * 30;
-export const TRIAL_LABEL = TRIAL_MONTHS > 0 ? `${TRIAL_MONTHS} mois offert${TRIAL_MONTHS > 1 ? "s" : ""}` : "";
+export const TRIAL_WEEKS = PRO_FREE_WEEKS;
+/** Durée envoyée à Stripe (`trial_period_days`). */
+export const TRIAL_DAYS = TRIAL_WEEKS * 7;
+export const TRIAL_LABEL = TRIAL_WEEKS > 0 ? PRO_FREE_LABEL : "";
 
 /** Date du premier prélèvement (fin de l'essai) à partir d'aujourd'hui. */
 export function firstChargeDate(todayISO: string): string {
-  if (TRIAL_MONTHS <= 0) return todayISO;
+  if (TRIAL_DAYS <= 0) return todayISO;
   const [y, m, d] = todayISO.split("-").map(Number) as [number, number, number];
-  const date = new Date(y, m - 1 + TRIAL_MONTHS, d);
+  const date = new Date(y, m - 1, d + TRIAL_DAYS);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 

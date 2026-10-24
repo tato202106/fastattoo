@@ -10,10 +10,10 @@ test("inscription tatoueur : paiement obligatoire, forfait annuel à 179 € pro
   await expect(page.getByRole("heading", { name: "Active ton profil pro" })).toBeVisible();
   await expect(page.getByRole("radio", { name: /Annuel/ })).toHaveAttribute("aria-checked", "true");
   await expect(page.getByText("puis 179 € / an")).toBeVisible();
-  await page.getByRole("button", { name: "Commencer — 1 mois offert" }).click();
+  await page.getByRole("button", { name: "Commencer — 1 semaine offerte" }).click();
   const sheet = page.getByRole("dialog", { name: "Paiement" });
   await expect(sheet.getByText("Mode démonstration")).toBeVisible();
-  await sheet.getByRole("button", { name: /Commencer — 1 mois offert/ }).click();
+  await sheet.getByRole("button", { name: /Commencer — 1 semaine offerte/ }).click();
   await expect(page).toHaveURL(/\/pro\?bienvenue=1/);
   await expect(page.getByRole("link", { name: "Pro · Annuel" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Passe à l'annuel" })).toHaveCount(0);
@@ -63,7 +63,7 @@ test("inscription réelle : formulaire → choix du forfait (annuel par défaut)
 
   await expect(page.getByRole("heading", { name: "Dernière étape : active ton profil" })).toBeVisible();
   await expect(page.getByRole("radio", { name: /Annuel/ })).toHaveAttribute("aria-checked", "true");
-  await page.getByRole("button", { name: /Commencer — 1 mois offert/ }).click();
+  await page.getByRole("button", { name: /Commencer — 1 semaine offerte/ }).click();
   await expect(page).toHaveURL(/stripe=simule/);
   expect(checkoutBody).toEqual({ plan: "annual", email: "nora@example.com", signupId: 42 });
 });
