@@ -12,7 +12,7 @@ import type { ArtistSignup } from "@/lib/signup";
 import { STYLES } from "@/lib/styles";
 import type { StyleSlug } from "@/lib/types";
 
-type Errors = Partial<Record<keyof ArtistSignup, string>>;
+type Errors = Partial<Record<keyof ArtistSignup | "password", string>>;
 
 const INPUT = "mt-1 h-12 w-full rounded-xl border border-border bg-surface px-3 outline-none focus:border-fg";
 
@@ -48,6 +48,8 @@ export function SignupForm() {
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [existingAccount, setExistingAccount] = useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -57,7 +59,7 @@ export function SignupForm() {
     setErrors({});
     try {
       const res = await fetch("/api/inscriptions-tatoueurs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      const data = (await res.json().catch(() => ({}))) as { errors?: Errors; error?: string; signupId?: number | null };
+      const data = (await res.json().catch(() => ({}))) as { errors?: Errors; error?: string; signupId?: number | null; existingAccount?: boolean };
       if (res.ok) {
         const next = { signupId: data.signupId ?? null, email: String(fd.get("email") ?? "") };
         try {
@@ -71,6 +73,7 @@ export function SignupForm() {
         return;
       }
       if (data.errors) setErrors(data.errors);
+      setExistingAccount(Boolean(data.existingAccount));
       setMessage(data.error ?? "Certains champs sont à corriger.");
       setStatus("error");
     } catch {
@@ -93,6 +96,12 @@ export function SignupForm() {
       <p className="mt-2 text-[15px] text-muted">
         {PRO_FREE_LABEL}, puis {PRO_PRICE_ANNUAL} € par an (ou {PRO_PRICE_MONTHLY} € par mois). Étape 1 : tes infos, étape 2 : le paiement sécurisé.
       </p>
+      <p className="mt-2 text-sm">
+        Déjà un compte ?{" "}
+        <Link href="/espace-tatoueur/connexion" className="font-semibold text-accent underline">
+          Connecte-toi
+        </Link>
+      </p>
 
       <div className="mt-6 space-y-4">
         <Field label="Nom ou nom d'artiste" error={errors.name}>
@@ -110,6 +119,32 @@ export function SignupForm() {
         <Field label="E-mail" error={errors.email}>
           <input name="email" type="email" inputMode="email" required autoComplete="email" placeholder="toi@exemple.fr" className={INPUT} />
         </Field>
+        <Field label="Mot de passe" error={errors.password}>
+          <div className="relative">
+            <input
+              name="password"
+              type={showPassword ? "text" : "password"}
+              required
+              minLength={8}
+              autoComplete="new-password"
+              placeholder="8 caractères minimum"
+              className={`${INPUT} pr-24`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="tap absolute top-1 right-1 h-11 rounded-lg px-3 text-sm font-medium text-muted"
+            >
+              {showPassword ? "Masquer" : "Afficher"}
+            </button>
+          </div>
+          <span className="mt-1 block text-sm text-muted">Pour te connecter à ton espace tatoueur et modifier ton profil.</span>
+        </Field>
+        {existingAccount && (
+          <Link href="/espace-tatoueur/connexion" className={buttonClass("outline", "md", "w-full")}>
+            Me connecter à mon espace
+          </Link>
+        )}
         <Field label="Téléphone" optional>
           <input name="phone" type="tel" inputMode="tel" autoComplete="tel" className={INPUT} />
         </Field>

@@ -55,8 +55,8 @@ export function SignupPayment({ signupId, email, cancelled }: { signupId: number
         </span>
         <h1 className="mt-4 font-display text-[28px] leading-tight font-bold">Merci, c&apos;est noté !</h1>
         <p className="mt-2 text-muted">Ton inscription est enregistrée. Le paiement en ligne arrive très bientôt : on te recontacte par e-mail pour activer ton profil.</p>
-        <Link href="/" className={buttonClass("outline", "lg", "mt-6 w-full max-w-xs")}>
-          Retour à l&apos;accueil
+        <Link href="/espace-tatoueur" className={buttonClass("primary", "lg", "mt-6 w-full max-w-xs")}>
+          Compléter mon profil
         </Link>
       </div>
     );

@@ -1,4 +1,6 @@
 import { cookies } from "next/headers";
+import { linkSubscription } from "@/lib/accounts/db";
+import { currentAccount } from "@/lib/accounts/session";
 import { recordSignupSubscription } from "@/lib/billing/signups-db";
 import { retrieveCheckoutSession, stripeEnabled, subscriptionCookieOptions, SUBSCRIPTION_COOKIE, summarize } from "@/lib/billing/stripe";
 
@@ -16,8 +18,16 @@ export async function GET(req: Request) {
     (await cookies()).set(SUBSCRIPTION_COOKIE, sub.id, subscriptionCookieOptions);
     const summary = summarize(sub);
     const signupId = Number(session.metadata?.signup_id);
-    if (signupId) await recordSignupSubscription(signupId, { plan: summary.plan, status: sub.status, subscriptionId: sub.id, customerId: (session as { customer?: string | null }).customer });
-    return Response.json({ paid: true, ...summary });
+    const customerId = (session as { customer?: string | null }).customer ?? null;
+    if (signupId) await recordSignupSubscription(signupId, { plan: summary.plan, status: sub.status, subscriptionId: sub.id, customerId });
+    // Rattache l'abonnement au compte tatoueur (connecté, ou créé avec cette inscription).
+    const account = await currentAccount();
+    try {
+      await linkSubscription({ accountId: account?.id, signupId: signupId || null }, { subscriptionId: sub.id, customerId, status: sub.status });
+    } catch (e) {
+      console.error("[abonnement] rattachement au compte impossible :", e);
+    }
+    return Response.json({ paid: true, account: Boolean(account), ...summary });
   } catch (e) {
     return Response.json({ error: (e as Error).message }, { status: 502 });
   }
