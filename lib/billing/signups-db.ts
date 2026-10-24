@@ -3,7 +3,9 @@ import { neon } from "@neondatabase/serverless";
 import type { PlanId } from "./plans";
 import type { SubscriptionUpdate } from "./webhook";
 
-type Sql = ReturnType<typeof neon>;
+/** Connexion Neon (type concret, réutilisé par les fonctions ci-dessous). */
+const connect = (url: string) => neon(url);
+type Sql = ReturnType<typeof connect>;
 
 /** Colonnes d'abonnement de artist_signups (ajoutées au besoin, sans migration manuelle). */
 async function ensureSubscriptionColumns(sql: Sql) {
@@ -22,7 +24,7 @@ async function ensureSubscriptionColumns(sql: Sql) {
 export async function recordSignupSubscription(signupId: number, data: { plan: PlanId; status: string; subscriptionId: string; customerId?: string | null }) {
   if (!process.env.DATABASE_URL || !Number.isInteger(signupId)) return;
   try {
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = connect(process.env.DATABASE_URL);
     await ensureSubscriptionColumns(sql);
     await sql`UPDATE artist_signups
       SET plan = ${data.plan}, subscription_status = ${data.status}, stripe_subscription_id = ${data.subscriptionId},
@@ -43,7 +45,7 @@ export async function recordSignupSubscription(signupId: number, data: { plan: P
  */
 export async function applySubscriptionUpdate(u: SubscriptionUpdate): Promise<number> {
   if (!process.env.DATABASE_URL) return 0;
-  const sql = neon(process.env.DATABASE_URL);
+  const sql = connect(process.env.DATABASE_URL);
   await ensureSubscriptionColumns(sql);
   const rows = (await sql`UPDATE artist_signups
     SET plan = ${u.plan}, subscription_status = ${u.status}, stripe_subscription_id = ${u.subscriptionId},
