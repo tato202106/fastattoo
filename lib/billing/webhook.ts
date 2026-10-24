@@ -91,7 +91,8 @@ export const SUBSCRIPTION_EVENTS = new Set([
 ]);
 
 /** Événements de facture : on relit l'abonnement concerné chez Stripe. */
-export const INVOICE_EVENTS = new Set(["invoice.paid", "invoice.payment_failed"]);
+export const INVOICE_EVENTS = new Set(["invoice.paid", "invoice.payment_succeeded", "invoice.payment_failed"]);
+export const CHECKOUT_EVENTS = new Set(["checkout.session.completed", "checkout.session.async_payment_succeeded"]);
 
 /** Identifiant d'abonnement d'une facture (ancien et nouveau format de l'API). */
 export function invoiceSubscriptionId(invoice: {

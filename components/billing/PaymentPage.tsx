@@ -26,6 +26,7 @@ export function PaymentPage({
   cancelled: boolean;
   /** Abonnement existant dont le paiement a échoué : régulariser plutôt que repayer. */
   fixPayment: boolean;
+  /** Clé Stripe détectée côté serveur (sinon le paywall s'affiche quand même, le paiement explique ce qui manque). */
   stripe: boolean;
 }) {
   const router = useRouter();
@@ -39,12 +40,13 @@ export function PaymentPage({
     setError(null);
     try {
       const res = await fetch("/api/billing/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan }) });
-      const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string; already?: boolean; redirect?: string };
+      const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string; already?: boolean; redirect?: string; mode?: string };
       if (data.already && data.redirect) {
         router.replace(data.redirect);
         router.refresh();
         return;
       }
+      if (data.mode === "demo") throw new Error("Le paiement est momentanément indisponible. Réessaie dans quelques minutes, ou écris-nous si ça persiste.");
       if (!res.ok || !data.url) throw new Error(data.error ?? "Impossible d'ouvrir le paiement. Réessaie.");
       // Laisse l'animation se jouer un instant avant de partir vers Stripe.
       await new Promise((r) => setTimeout(r, 450));
@@ -85,16 +87,7 @@ export function PaymentPage({
     </div>
   );
 
-  if (!stripe) {
-    return (
-      <div className="space-y-6 pt-4">
-        {header}
-        <p className="rounded-2xl bg-surface-2 p-4 text-[15px]">Le paiement en ligne n&apos;est pas encore activé : on te recontacte très vite par e-mail.</p>
-      </div>
-    );
-  }
-
-  if (fixPayment) {
+  if (fixPayment && stripe) {
     return (
       <div className="space-y-6 pt-4">
         {header}

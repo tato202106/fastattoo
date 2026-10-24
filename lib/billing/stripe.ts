@@ -33,12 +33,54 @@ async function stripe<T>(method: "GET" | "POST", path: string, params?: Record<s
   return json;
 }
 
+interface StripePrice {
+  id: string;
+  active: boolean;
+  unit_amount: number | null;
+  currency: string;
+  recurring?: { interval: string } | null;
+}
+
+type PlanRef = { kind: "price" | "product"; id: string; auto?: boolean };
+
+// Prix retrouvés dans le compte Stripe (évite une requête à chaque paiement).
+const DISCOVERY_TTL_MS = 10 * 60_000;
+const discovered = new Map<PlanId, { at: number; id: string | null }>();
+
+/**
+ * Prix déjà créé dans Stripe pour ce forfait (même montant, même devise, même
+ * périodicité), quand aucune variable STRIPE_PRICE_… ne l'indique.
+ */
+async function discoverPrice(plan: PlanId): Promise<string | null> {
+  const cached = discovered.get(plan);
+  if (cached && Date.now() - cached.at < (cached.id ? DISCOVERY_TTL_MS : 60_000)) return cached.id;
+  const p = PLANS[plan];
+  let id: string | null = null;
+  try {
+    const res = await stripe<{ data: StripePrice[] }>("GET", "/prices", { active: "true", type: "recurring", currency: CURRENCY, limit: 100 });
+    id = res.data.find((x) => x.unit_amount === p.amount && x.currency === CURRENCY && x.recurring?.interval === p.interval)?.id ?? null;
+  } catch (e) {
+    // Clé restreinte sans lecture des prix, par exemple : prix défini à la volée.
+    console.warn(`[stripe] recherche du prix ${plan} impossible :`, (e as Error).message);
+  }
+  discovered.set(plan, { at: Date.now(), id });
+  return id;
+}
+
+/** Prix ou produit Stripe d'un forfait : variable d'environnement, sinon prix retrouvé dans le compte. */
+export async function resolvePlanRef(plan: PlanId): Promise<PlanRef | null> {
+  const ref = stripePlanRef(plan);
+  if (ref) return ref;
+  const id = await discoverPrice(plan);
+  return id ? { kind: "price", id, auto: true } : null;
+}
+
 /**
  * Prix d'un forfait : prix Stripe (price_…), produit Stripe (prod_…, montant
  * repris de lib/pro-offer.ts) ou, à défaut, prix défini à la volée.
  */
-function priceParams(plan: PlanId, prefix: string): Record<string, string | number> {
-  const ref = stripePlanRef(plan);
+async function priceParams(plan: PlanId, prefix: string): Promise<Record<string, string | number>> {
+  const ref = await resolvePlanRef(plan);
   const p = PLANS[plan];
   if (ref?.kind === "price") return { [`${prefix}[price]`]: ref.id };
   if (ref?.kind === "product") {
@@ -70,7 +112,7 @@ export async function createCheckoutSession(opts: {
   return stripe<{ id: string; url: string }>("POST", "/checkout/sessions", {
     mode: "subscription",
     locale: "fr",
-    ...priceParams(opts.plan, "line_items[0]"),
+    ...(await priceParams(opts.plan, "line_items[0]")),
     "line_items[0][quantity]": 1,
     customer_email: opts.email || undefined,
     client_reference_id: opts.reference,
@@ -127,7 +169,7 @@ export async function upgradeToAnnual(subscriptionId: string) {
   const sub = await retrieveSubscription(subscriptionId);
   const item = sub.items.data[0];
   if (!item) throw new Error("Abonnement sans article");
-  const ref = stripePlanRef("annual");
+  const ref = await resolvePlanRef("annual");
   const price: Record<string, string | number> =
     ref?.kind === "price"
       ? { "items[0][price]": ref.id }
@@ -180,7 +222,7 @@ export const SUBSCRIPTION_COOKIE = "ft_sub";
 export interface StripeSetupCheck {
   keyWorks: boolean;
   keyError: string | null;
-  plans: Record<PlanId, { found: boolean; detail: string | null; matches: boolean | null; error: string | null }>;
+  plans: Record<PlanId, { found: boolean; auto: boolean; detail: string | null; matches: boolean | null; error: string | null }>;
 }
 
 /**
@@ -192,8 +234,8 @@ export async function checkStripeSetup(): Promise<StripeSetupCheck> {
     keyWorks: false,
     keyError: null,
     plans: {
-      monthly: { found: false, detail: null, matches: null, error: null },
-      annual: { found: false, detail: null, matches: null, error: null },
+      monthly: { found: false, auto: false, detail: null, matches: null, error: null },
+      annual: { found: false, auto: false, detail: null, matches: null, error: null },
     },
   };
   try {
@@ -204,24 +246,25 @@ export async function checkStripeSetup(): Promise<StripeSetupCheck> {
     return result;
   }
   for (const plan of ["monthly", "annual"] as PlanId[]) {
-    const ref = stripePlanRef(plan);
+    const ref = await resolvePlanRef(plan);
     if (!ref) continue;
     try {
       if (ref.kind === "price") {
-        const price = await stripe<{ active: boolean; unit_amount: number | null; currency: string; recurring?: { interval: string } | null }>("GET", `/prices/${encodeURIComponent(ref.id)}`);
+        const price = await stripe<StripePrice>("GET", `/prices/${encodeURIComponent(ref.id)}`);
         const p = PLANS[plan];
         result.plans[plan] = {
           found: true,
+          auto: Boolean(ref.auto),
           detail: `${(price.unit_amount ?? 0) / 100} ${price.currency.toUpperCase()} / ${price.recurring?.interval ?? "paiement unique"}${price.active ? "" : " (inactif)"}`,
           matches: price.active && price.unit_amount === p.amount && price.currency === CURRENCY && price.recurring?.interval === p.interval,
           error: null,
         };
       } else {
         const product = await stripe<{ active: boolean; name: string }>("GET", `/products/${encodeURIComponent(ref.id)}`);
-        result.plans[plan] = { found: true, detail: `Produit « ${product.name} »${product.active ? "" : " (inactif)"}`, matches: product.active, error: null };
+        result.plans[plan] = { found: true, auto: false, detail: `Produit « ${product.name} »${product.active ? "" : " (inactif)"}`, matches: product.active, error: null };
       }
     } catch (e) {
-      result.plans[plan] = { found: false, detail: null, matches: false, error: (e as Error).message };
+      result.plans[plan] = { found: false, auto: Boolean(ref.auto), detail: null, matches: false, error: (e as Error).message };
     }
   }
   return result;

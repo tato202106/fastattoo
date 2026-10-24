@@ -9,6 +9,17 @@ describe("variables Stripe", () => {
     expect(stripeConfigured({})).toBe(false);
   });
 
+  it("clé restreinte (rk_) sous n'importe quel nom de variable Stripe", () => {
+    expect(stripeSecretKey({ STRIPE_RESTRICTED_KEY: "rk_live_abc" })).toBe("rk_live_abc");
+    expect(stripeSecretKey({ MA_CLE_STRIPE: "rk_live_abc", STRIPE_PUBLISHABLE_KEY: "pk_live_x" })).toBe("rk_live_abc");
+    expect(stripeSecretKey({ STRIPE_TEST: "sk_test_a", STRIPE_PROD: "rk_live_b" })).toBe("rk_live_b");
+    expect(stripeSecretKey({ STRIPE_SECRET_KEY: "pk_live_x", STRIPE_RK_LIVE: "rk_live_b" })).toBe("rk_live_b");
+    expect(stripeSecretKey({ OTHER_KEY: "sk_live_a" })).toBeNull();
+    const d = billingDiagnostics({ STRIPE_RESTRICTED_KEY: "rk_live_abc" });
+    expect(d.secretKey).toMatchObject({ ok: true, mode: "live", restricted: true });
+    expect(stripeWebhookSecret({ STRIPE_WH: "whsec_y" })).toBe("whsec_y");
+  });
+
   it("refuse une clé publique à la place de la clé secrète, avec un message clair", () => {
     expect(stripeSecretKey({ STRIPE_SECRET_KEY: "pk_live_abc" })).toBeNull();
     const d = billingDiagnostics({ STRIPE_SECRET_KEY: "pk_live_abc" });
