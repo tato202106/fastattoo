@@ -118,7 +118,7 @@ tests/unit, tests/e2e   Vitest, Playwright
 | Demandes, messagerie, rendez-vous, calendrier, favoris, avis laissés, notifications | **Simulés côté client** (localStorage) : un seul appareil, pas de temps réel entre deux utilisateurs |
 | Statistiques tatoueur | « Vues du profil » = valeur de démo ; demandes et taux de réponse calculés |
 | Notifications push | Architecture prête (canaux + `push` dans le SW) ; pas d'envoi serveur |
-| Abonnement tatoueur (179 €/an ou 19 €/mois, 1 mois offert) | **Réel via Stripe Checkout** à l'inscription (`/devenir-tatoueur/inscription`) si `STRIPE_SECRET_KEY` est défini, enregistré dans Neon ; slides + passage à l'annuel sur `/mon-abonnement`. L'espace pro `/pro` reste une démo (aucun encaissement) |
+| Abonnement tatoueur (179 €/an ou 19 €/mois, 1 semaine offerte) | **Réel via Stripe Checkout** à l'inscription (`/devenir-tatoueur/inscription`) si `STRIPE_SECRET_KEY` est défini, enregistré dans Neon ; slides + passage à l'annuel sur `/mon-abonnement`. L'espace pro `/pro` reste une démo (aucun encaissement) |
 | Mise en avant, commission (reste de la Phase 6) | Non implémentés — point d'extension `Artist.promoted` |
 
 ## Qualité
