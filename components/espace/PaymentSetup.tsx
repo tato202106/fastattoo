@@ -79,7 +79,7 @@ export function PaymentSetup({ diag, check }: { diag: BillingDiagnostics; check:
           if (d.problem) return <Row key={plan} ok={false} title={label}>{d.problem}</Row>;
           return (
             <Row key={plan} ok={c ? c.found && c.matches !== false : true} warn={c?.matches === false} title={label}>
-              {c?.error ? `Introuvable chez Stripe (${c.error}).` : c?.detail ? `${c.detail}${c.matches === false ? " : ne correspond pas au prix affiché sur le site." : ""}` : `Variable ${d.variable}.`}
+              {c?.error ? `Introuvable chez Stripe : ${c.error}` : c?.detail ? `${c.detail}${c.matches === false ? " : ne correspond pas au prix affiché sur le site." : ""}` : `Variable ${d.variable}.`}
             </Row>
           );
         })}

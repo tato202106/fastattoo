@@ -67,9 +67,13 @@ async function discoverPrice(plan: PlanId): Promise<string | null> {
   return id;
 }
 
-/** Prix ou produit Stripe d'un forfait : variable d'environnement, sinon prix retrouvé dans le compte. */
-export async function resolvePlanRef(plan: PlanId): Promise<PlanRef | null> {
-  const ref = stripePlanRef(plan);
+/**
+ * Prix ou produit Stripe d'un forfait : variable d'environnement, sinon prix
+ * retrouvé dans le compte. `ignoreEnv` : la variable désigne un prix inconnu
+ * de ce compte Stripe (prix du mode test avec une clé live, par exemple).
+ */
+export async function resolvePlanRef(plan: PlanId, ignoreEnv = false): Promise<PlanRef | null> {
+  const ref = ignoreEnv ? null : stripePlanRef(plan);
   if (ref) return ref;
   const id = await discoverPrice(plan);
   return id ? { kind: "price", id, auto: true } : null;
@@ -79,8 +83,8 @@ export async function resolvePlanRef(plan: PlanId): Promise<PlanRef | null> {
  * Prix d'un forfait : prix Stripe (price_…), produit Stripe (prod_…, montant
  * repris de lib/pro-offer.ts) ou, à défaut, prix défini à la volée.
  */
-async function priceParams(plan: PlanId, prefix: string): Promise<Record<string, string | number>> {
-  const ref = await resolvePlanRef(plan);
+async function priceParams(plan: PlanId, prefix: string, ignoreEnv = false): Promise<Record<string, string | number>> {
+  const ref = await resolvePlanRef(plan, ignoreEnv);
   const p = PLANS[plan];
   if (ref?.kind === "price") return { [`${prefix}[price]`]: ref.id };
   if (ref?.kind === "product") {
@@ -99,6 +103,22 @@ async function priceParams(plan: PlanId, prefix: string): Promise<Record<string,
   };
 }
 
+const isMissingResource = (e: unknown) => /no such (price|product)/i.test((e as Error).message);
+
+/**
+ * Réessaie sans le prix de la variable d'environnement quand Stripe ne le
+ * connaît pas : le paiement passe quand même (prix retrouvé ou défini à la volée).
+ */
+async function withPlanFallback<T>(plan: PlanId, run: (ignoreEnv: boolean) => Promise<T>): Promise<T> {
+  try {
+    return await run(false);
+  } catch (e) {
+    if (!stripePlanRef(plan) || !isMissingResource(e)) throw e;
+    console.warn(`[stripe] prix ${plan} de la variable d'environnement introuvable (${(e as Error).message}) : prix de secours utilisé.`);
+    return run(true);
+  }
+}
+
 export async function createCheckoutSession(opts: {
   plan: PlanId;
   email?: string;
@@ -109,23 +129,25 @@ export async function createCheckoutSession(opts: {
   successPath: string;
   cancelPath: string;
 }) {
-  return stripe<{ id: string; url: string }>("POST", "/checkout/sessions", {
-    mode: "subscription",
-    locale: "fr",
-    ...(await priceParams(opts.plan, "line_items[0]")),
-    "line_items[0][quantity]": 1,
-    customer_email: opts.email || undefined,
-    client_reference_id: opts.reference,
-    "metadata[plan]": opts.plan,
-    "metadata[signup_id]": opts.signupId,
-    "metadata[account_id]": opts.accountId,
-    "subscription_data[metadata][plan]": opts.plan,
-    "subscription_data[metadata][signup_id]": opts.signupId,
-    "subscription_data[metadata][account_id]": opts.accountId,
-    allow_promotion_codes: "true",
-    success_url: `${opts.origin}${opts.successPath}${opts.successPath.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${opts.origin}${opts.cancelPath}`,
-  });
+  return withPlanFallback(opts.plan, async (ignoreEnv) =>
+    stripe<{ id: string; url: string }>("POST", "/checkout/sessions", {
+      mode: "subscription",
+      locale: "fr",
+      ...(await priceParams(opts.plan, "line_items[0]", ignoreEnv)),
+      "line_items[0][quantity]": 1,
+      customer_email: opts.email || undefined,
+      client_reference_id: opts.reference,
+      "metadata[plan]": opts.plan,
+      "metadata[signup_id]": opts.signupId,
+      "metadata[account_id]": opts.accountId,
+      "subscription_data[metadata][plan]": opts.plan,
+      "subscription_data[metadata][signup_id]": opts.signupId,
+      "subscription_data[metadata][account_id]": opts.accountId,
+      allow_promotion_codes: "true",
+      success_url: `${opts.origin}${opts.successPath}${opts.successPath.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${opts.origin}${opts.cancelPath}`,
+    }),
+  );
 }
 
 export interface StripeSubscription {
@@ -169,21 +191,23 @@ export async function upgradeToAnnual(subscriptionId: string) {
   const sub = await retrieveSubscription(subscriptionId);
   const item = sub.items.data[0];
   if (!item) throw new Error("Abonnement sans article");
-  const ref = await resolvePlanRef("annual");
-  const price: Record<string, string | number> =
-    ref?.kind === "price"
-      ? { "items[0][price]": ref.id }
-      : {
-          "items[0][price_data][currency]": CURRENCY,
-          "items[0][price_data][unit_amount]": PLANS.annual.amount,
-          "items[0][price_data][recurring][interval]": "year",
-          "items[0][price_data][product]": ref?.kind === "product" ? ref.id : item.price.product,
-        };
-  return stripe<StripeSubscription>("POST", `/subscriptions/${encodeURIComponent(subscriptionId)}`, {
-    "items[0][id]": item.id,
-    ...price,
-    proration_behavior: "always_invoice",
-    "metadata[plan]": "annual",
+  return withPlanFallback("annual", async (ignoreEnv) => {
+    const ref = await resolvePlanRef("annual", ignoreEnv);
+    const price: Record<string, string | number> =
+      ref?.kind === "price"
+        ? { "items[0][price]": ref.id }
+        : {
+            "items[0][price_data][currency]": CURRENCY,
+            "items[0][price_data][unit_amount]": PLANS.annual.amount,
+            "items[0][price_data][recurring][interval]": "year",
+            "items[0][price_data][product]": ref?.kind === "product" ? ref.id : item.price.product,
+          };
+    return stripe<StripeSubscription>("POST", `/subscriptions/${encodeURIComponent(subscriptionId)}`, {
+      "items[0][id]": item.id,
+      ...price,
+      proration_behavior: "always_invoice",
+      "metadata[plan]": "annual",
+    });
   });
 }
 
@@ -264,7 +288,11 @@ export async function checkStripeSetup(): Promise<StripeSetupCheck> {
         result.plans[plan] = { found: true, auto: false, detail: `Produit « ${product.name} »${product.active ? "" : " (inactif)"}`, matches: product.active, error: null };
       }
     } catch (e) {
-      result.plans[plan] = { found: false, auto: Boolean(ref.auto), detail: null, matches: false, error: (e as Error).message };
+      const message = (e as Error).message;
+      const error = isMissingResource(e) && !ref.auto
+        ? `${message} : cet identifiant n'existe pas pour cette clé (prix créé en mode test avec une clé live ?). Le site utilise en attendant un prix de secours au bon montant ; remplace la variable par le price_… du mode live.`
+        : message;
+      result.plans[plan] = { found: false, auto: Boolean(ref.auto), detail: null, matches: false, error };
     }
   }
   return result;
