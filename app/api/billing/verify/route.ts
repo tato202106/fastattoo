@@ -20,14 +20,17 @@ export async function GET(req: Request) {
     const signupId = Number(session.metadata?.signup_id);
     const customerId = (session as { customer?: string | null }).customer ?? null;
     if (signupId) await recordSignupSubscription(signupId, { plan: summary.plan, status: sub.status, subscriptionId: sub.id, customerId });
-    // Rattache l'abonnement au compte tatoueur (connecté, ou créé avec cette inscription).
+    // Rattache l'abonnement au compte tatoueur créé avec cette inscription (jamais à un autre compte).
     const account = await currentAccount();
-    try {
-      await linkSubscription({ accountId: account?.id, signupId: signupId || null }, { subscriptionId: sub.id, customerId, status: sub.status });
-    } catch (e) {
-      console.error("[abonnement] rattachement au compte impossible :", e);
+    const ownAccount = Boolean(account && signupId && account.signupId === signupId);
+    if (signupId) {
+      try {
+        await linkSubscription({ signupId }, { subscriptionId: sub.id, customerId, status: sub.status });
+      } catch (e) {
+        console.error("[abonnement] rattachement au compte impossible :", e);
+      }
     }
-    return Response.json({ paid: true, account: Boolean(account), ...summary });
+    return Response.json({ paid: true, account: ownAccount, ...summary });
   } catch (e) {
     return Response.json({ error: (e as Error).message }, { status: 502 });
   }

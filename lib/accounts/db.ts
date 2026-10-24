@@ -283,16 +283,15 @@ export async function submitProfile(id: number): Promise<void> {
 
 /* ---------- Abonnement Stripe ---------- */
 
-/** Rattache un abonnement payé au compte (par session, sinon par l'inscription d'origine). */
-export async function linkSubscription(
-  where: { accountId?: number | null; signupId?: number | null },
-  sub: { subscriptionId: string; customerId: string | null; status: string },
-): Promise<void> {
-  if (!where.accountId && !where.signupId) return;
+/**
+ * Rattache un abonnement payé au compte créé avec l'inscription d'origine
+ * (identifiant d'inscription enregistré par le serveur dans la session Stripe).
+ */
+export async function linkSubscription(where: { signupId: number }, sub: { subscriptionId: string; customerId: string | null; status: string }): Promise<void> {
   await ensureAccountTables();
   await connect()`UPDATE artist_accounts SET stripe_subscription_id = ${sub.subscriptionId},
       stripe_customer_id = COALESCE(${sub.customerId}, stripe_customer_id), subscription_status = ${sub.status}, updated_at = now()
-    WHERE id = ${where.accountId ?? -1} OR (${where.signupId ?? null}::int IS NOT NULL AND signup_id = ${where.signupId ?? null}::int)`;
+    WHERE signup_id = ${where.signupId}`;
 }
 
 /** Statut reçu par webhook Stripe. */
