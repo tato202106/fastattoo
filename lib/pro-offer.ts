@@ -17,3 +17,12 @@ export const PRO_ANNUAL_PERK = "1 mois offert";
  * Tant qu'il est vide, le bouton affiche « Inscriptions bientôt ouvertes ».
  */
 export const PRO_SIGNUP_URL = "/devenir-tatoueur/inscription";
+
+/**
+ * Lien d'inscription avec le forfait choisi sur /devenir-tatoueur : il est
+ * présélectionné à l'étape de paiement. Un lien externe est renvoyé tel quel.
+ */
+export function proSignupUrlFor(plan: "annual" | "monthly"): string {
+  if (!PRO_SIGNUP_URL.startsWith("/")) return PRO_SIGNUP_URL;
+  return `${PRO_SIGNUP_URL}?forfait=${plan}`;
+}

@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { buttonClass } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { PAYMENT_PATH } from "@/lib/billing/access";
+import { isPlanId } from "@/lib/billing/plans";
 import { PRO_ANNUAL_PERK, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "@/lib/pro-offer";
 import type { ArtistSignup } from "@/lib/signup";
 import { STYLES } from "@/lib/styles";
@@ -33,6 +34,9 @@ export function SignupForm() {
   const params = useSearchParams();
   const router = useRouter();
   const referrerParam = params.get("parrain") ?? "";
+  // Forfait cliqué sur /devenir-tatoueur : présélectionné à l'étape de paiement.
+  const planParam = params.get("forfait");
+  const planQuery = isPlanId(planParam) ? `&forfait=${planParam}` : "";
   // Ancien lien de retour de Stripe : la page de paiement est désormais dédiée.
   useEffect(() => {
     if (params.get("paiement") === "annule") router.replace(`${PAYMENT_PATH}?annule=1`);
@@ -57,7 +61,7 @@ export function SignupForm() {
       if (res.ok) {
         // Compte créé et connecté : paiement obligatoire pour la suite.
         setStatus("done");
-        router.push(`${PAYMENT_PATH}?inscription=1`);
+        router.push(`${PAYMENT_PATH}?inscription=1${planQuery}`);
         return;
       }
       if (data.errors) setErrors(data.errors);

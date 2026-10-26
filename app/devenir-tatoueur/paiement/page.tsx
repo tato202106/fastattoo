@@ -4,6 +4,7 @@ import { PaymentPage } from "@/components/billing/PaymentPage";
 import { linkSubscription } from "@/lib/accounts/db";
 import { currentAccount } from "@/lib/accounts/session";
 import { hasPaidAccess, needsPaymentFix } from "@/lib/billing/access";
+import { isPlanId } from "@/lib/billing/plans";
 import { customerId, findLiveSubscriptionForAccount, stripeEnabled } from "@/lib/billing/stripe";
 
 export const metadata: Metadata = { title: "Paiement de l'abonnement", robots: { index: false } };
@@ -37,6 +38,7 @@ export default async function ArtistPaymentPage({ searchParams }: PageProps<"/de
         cancelled={params.annule === "1"}
         fixPayment={Boolean(account.subscriptionId && needsPaymentFix(account.subscriptionStatus))}
         stripe={stripe}
+        initialPlan={isPlanId(params.forfait) ? params.forfait : "annual"}
       />
     </main>
   );

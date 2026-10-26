@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ANNUAL_PERK, annualPerkIsTrue, annualSavings, formatPrice, isPlanId, PLANS, renewalDate } from "@/lib/billing/plans";
-import { PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "@/lib/pro-offer";
+import { PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL, proSignupUrlFor } from "@/lib/pro-offer";
 
 describe("forfaits tatoueur", () => {
   it("forfait annuel à 179 €", () => {
@@ -35,5 +35,16 @@ describe("forfaits tatoueur", () => {
   it("valide les identifiants de forfait", () => {
     expect(isPlanId("annual")).toBe(true);
     expect(isPlanId("gold")).toBe(false);
+  });
+});
+
+describe("choix du forfait sur /devenir-tatoueur", () => {
+  it("chaque carte mène à l'inscription avec son forfait, reconnu au paiement", () => {
+    for (const plan of ["annual", "monthly"] as const) {
+      const url = new URL(proSignupUrlFor(plan), "https://fastattoo.test");
+      expect(url.pathname).toBe(PRO_SIGNUP_URL);
+      expect(url.searchParams.get("forfait")).toBe(plan);
+      expect(isPlanId(url.searchParams.get("forfait"))).toBe(true);
+    }
   });
 });

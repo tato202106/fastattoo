@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import clsx from "clsx";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { buttonClass } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { annualSavings, formatPrice } from "@/lib/billing/plans";
-import { PRO_ANNUAL_PERK, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL } from "@/lib/pro-offer";
+import { PRO_ANNUAL_PERK, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL, proSignupUrlFor } from "@/lib/pro-offer";
 import { SPONSOR_BOOST_MONTHS } from "@/lib/referral";
 
 export const metadata: Metadata = {
@@ -45,6 +47,33 @@ function SignupButton({ className }: { className?: string }) {
   return (
     <a href={PRO_SIGNUP_URL} target="_blank" rel="noopener" className={buttonClass("primary", "lg", className)}>
       Je m&apos;inscris
+    </a>
+  );
+}
+
+/** Carte de forfait : cliquable, elle mène à l'inscription avec ce forfait présélectionné au paiement. */
+function PlanCard({ plan, label, className, children }: { plan: "annual" | "monthly"; label: string; className: string; children: ReactNode }) {
+  const base = clsx("block rounded-[var(--radius-card)] bg-surface p-5 text-left", className);
+  if (!PRO_SIGNUP_URL) return <div className={base}>{children}</div>;
+  const href = proSignupUrlFor(plan);
+  const cta = (
+    <span className="mt-4 flex h-11 items-center justify-center gap-1.5 rounded-full bg-fg/5 text-[15px] font-semibold text-accent">
+      {label} <Icon name="chevronRight" size={16} />
+    </span>
+  );
+  const interactive = clsx(base, "tap transition-shadow hover:shadow-card focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none");
+  if (href.startsWith("/")) {
+    return (
+      <Link href={href} className={interactive}>
+        {children}
+        {cta}
+      </Link>
+    );
+  }
+  return (
+    <a href={href} target="_blank" rel="noopener" className={interactive}>
+      {children}
+      {cta}
     </a>
   );
 }
@@ -122,7 +151,7 @@ export default function BecomeArtistPage() {
           Deux forfaits, sans surprise
         </h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className="relative rounded-[var(--radius-card)] border-2 border-accent bg-surface p-5">
+          <PlanCard plan="annual" label="Choisir l'annuel" className="relative border-2 border-accent">
             <span className="absolute -top-3 left-5 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-accent-fg">
               Recommandé · 🎁 {PRO_ANNUAL_PERK}
             </span>
@@ -135,15 +164,15 @@ export default function BecomeArtistPage() {
               Soit {formatPrice(savings.perMonth)} par mois · {formatPrice(savings.saved)} d&apos;économie par an
             </p>
             <p className="mt-3 inline-flex rounded-full bg-accent-soft px-3 py-1 text-sm font-bold text-accent">{PRO_ANNUAL_PERK} par rapport au mensuel</p>
-          </div>
-          <div className="rounded-[var(--radius-card)] border border-border bg-surface p-5">
+          </PlanCard>
+          <PlanCard plan="monthly" label="Choisir le mensuel" className="border border-border">
             <p className="font-semibold">Mensuel</p>
             <p className="mt-1">
               <span className="text-4xl font-bold">{PRO_PRICE_MONTHLY} €</span>
               <span className="text-muted"> / mois</span>
             </p>
             <p className="mt-1 text-sm text-muted">Sans engagement</p>
-          </div>
+          </PlanCard>
         </div>
         <ul className="mt-4 space-y-2 text-[15px]">
           {["Résiliable à tout moment", "Profil et portfolio mis en avant sur la carte", "Demandes, messages et agenda inclus", "Paiement sécurisé par Stripe"].map((t) => (
