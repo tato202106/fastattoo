@@ -11,13 +11,13 @@ export const UPGRADE_SLIDES = [
   {
     kicker: `Forfait annuel · ${ANNUAL_PERK}`,
     title: `${formatPrice(PLANS.annual.amount)} pour 12 mois`,
-    text: `Au lieu de ${formatPrice(s.yearlyMonthlyCost)} en payant chaque mois.`,
+    text: "Un seul paiement, et ton profil reste en ligne toute l'année.",
     tone: "bg-fg text-bg",
   },
   {
-    kicker: `−${s.percent} %`,
-    title: `${formatPrice(s.saved)} d'économie`,
-    text: `Soit ${formatPrice(s.perMonth)} par mois au lieu de ${formatPrice(PLANS.monthly.amount)}${s.freeMonths >= 1 ? ` : plus de ${s.freeMonths} mois offert${s.freeMonths > 1 ? "s" : ""}` : ""}.`,
+    kicker: ANNUAL_PERK,
+    title: `${formatPrice(s.perMonth)} par mois`,
+    text: `Au lieu de ${formatPrice(PLANS.monthly.amount)} avec le forfait mensuel.`,
     tone: "bg-accent text-accent-fg",
   },
   {

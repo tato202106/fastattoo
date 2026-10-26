@@ -161,7 +161,7 @@ export default function BecomeArtistPage() {
               <span className="text-muted"> / an</span>
             </p>
             <p className="mt-1 text-sm text-muted">
-              Soit {formatPrice(savings.perMonth)} par mois · {formatPrice(savings.saved)} d&apos;économie par an
+              Soit {formatPrice(savings.perMonth)} par mois, en un seul paiement
             </p>
             <p className="mt-3 inline-flex rounded-full bg-accent-soft px-3 py-1 text-sm font-bold text-accent">{PRO_ANNUAL_PERK} par rapport au mensuel</p>
           </PlanCard>

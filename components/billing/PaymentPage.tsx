@@ -141,12 +141,7 @@ export function PaymentPage({
             <span className="pb-1 text-[15px] opacity-75">/ an</span>
           </span>
           <span className="mt-1 block text-[15px] opacity-85">soit {formatPrice(savings.perMonth)} par mois</span>
-          <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-sm font-bold text-accent-fg">
-            <Icon name="sparkle" size={15} /> {formatPrice(savings.saved)} d&apos;économie · −{savings.percent} %
-          </span>
-          <span className="mt-3 block text-sm opacity-75">
-            Au lieu de {formatPrice(savings.yearlyMonthlyCost)} en mensuel : {ANNUAL_PERK} et un seul paiement pour 12 mois.
-          </span>
+          <span className="mt-3 block text-sm opacity-75">{ANNUAL_PERK} et un seul paiement pour 12 mois.</span>
         </button>
 
         {/* Forfait mensuel : option secondaire */}
@@ -171,7 +166,7 @@ export function PaymentPage({
         </button>
         {!annual && (
           <button type="button" onClick={() => setPlan("annual")} className="tap w-full rounded-xl bg-accent-soft px-4 py-3 text-left text-sm font-medium text-accent">
-            Avec l&apos;annuel : {ANNUAL_PERK}, soit {formatPrice(savings.saved)} d&apos;économie par an. <span className="underline">Choisir l&apos;annuel</span>
+            Avec l&apos;annuel : {ANNUAL_PERK}, soit {formatPrice(savings.perMonth)} par mois. <span className="underline">Choisir l&apos;annuel</span>
           </button>
         )}
       </div>
