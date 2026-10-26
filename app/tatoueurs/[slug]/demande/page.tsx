@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { RequestWizard } from "@/components/request/RequestWizard";
 import { artists } from "@/lib/data";
+import { accountIdFromArtistId } from "@/lib/requests/model";
 
 export const metadata: Metadata = { title: "Demander un projet", robots: { index: false } };
 
@@ -12,7 +13,7 @@ export default async function RequestPage({ params }: PageProps<"/tatoueurs/[slu
   if (!a) notFound();
   return (
     <Suspense>
-      <RequestWizard artist={{ id: a.id, slug: a.slug, name: a.name, avatar: a.avatar, styles: a.styles, priceFrom: a.priceFrom, nextSlots: a.nextSlots }} />
+      <RequestWizard artist={{ id: a.id, slug: a.slug, name: a.name, avatar: a.avatar, styles: a.styles, priceFrom: a.priceFrom, nextSlots: a.nextSlots, real: accountIdFromArtistId(a.id) != null }} />
     </Suspense>
   );
 }

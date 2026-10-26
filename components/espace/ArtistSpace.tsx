@@ -15,7 +15,19 @@ import { PhotosManager } from "./PhotosManager";
 import { ProfileForm } from "./ProfileForm";
 
 /** Espace d'un tatoueur connecté : statut du profil, photos, profil modifiable, abonnement. */
-export function ArtistSpace({ initial, photos, paid, welcome }: { initial: Account; photos: PortfolioItem[]; paid: boolean; welcome: boolean }) {
+export function ArtistSpace({
+  initial,
+  photos,
+  paid,
+  welcome,
+  requests,
+}: {
+  initial: Account;
+  photos: PortfolioItem[];
+  paid: boolean;
+  welcome: boolean;
+  requests: { total: number; unread: number };
+}) {
   const router = useRouter();
   const [account, setAccount] = useState(initial);
 
@@ -51,6 +63,26 @@ export function ArtistSpace({ initial, photos, paid, welcome }: { initial: Accou
       )}
 
       <StatusCard account={account} paid={paid} />
+
+      <Link href="/espace-tatoueur/demandes" className="tap flex items-center gap-4 rounded-2xl bg-surface p-4 shadow-card">
+        <span className="relative inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+          <Icon name="inbox" size={24} />
+          {requests.unread > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-5 rounded-full bg-accent px-1.5 text-center text-[11px] leading-5 font-bold text-accent-fg">{requests.unread}</span>
+          )}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">Mes demandes de projets</span>
+          <span className="block text-sm text-muted">
+            {requests.unread > 0
+              ? `${requests.unread} nouvelle${requests.unread > 1 ? "s" : ""} demande${requests.unread > 1 ? "s" : ""} ou réponse${requests.unread > 1 ? "s" : ""}`
+              : requests.total > 0
+                ? `${requests.total} demande${requests.total > 1 ? "s" : ""} reçue${requests.total > 1 ? "s" : ""}`
+                : "Pas encore de demande"}
+          </span>
+        </span>
+        <Icon name="chevronRight" size={20} className="text-muted" />
+      </Link>
 
       <section aria-labelledby="photos" className="space-y-4">
         <h2 id="photos" className="font-display text-[24px] font-bold">
