@@ -17,6 +17,7 @@ import { styleLabel, zoneLabel } from "../styles";
 import type { ImageAsset } from "../types";
 import { renewalDate } from "../billing/plans";
 import { CLIENT_ID, DEMO_CLIENT_NAME } from "./ids";
+import { withoutDemoData } from "./migrate";
 import type {
   Appointment,
   AppNotification,
@@ -87,7 +88,7 @@ interface AppState {
   activateSubscription(sub: Pick<ArtistSubscription, "plan" | "provider"> & { renewsAt?: string | null }): void;
   dismissUpsell(): void;
   ensureReminders(): void;
-  /** Charge les données de démo (module importé à la demande, hors du bundle initial). */
+  /** Initialise un espace local vide (premier passage du visiteur). */
   seedDemo(force?: boolean): Promise<void>;
   resetDemo(): Promise<void>;
 }
@@ -393,10 +394,9 @@ export const useApp = create<AppState>()(
           }
         },
         async seedDemo(force = false) {
+          // Plus de fausses demandes ni conversations : chaque visiteur part d'un espace vide.
           if (get().seeded && !force) return;
-          const { buildDemoState } = await import("./demo");
-          set({ ...emptyData(), ...buildDemoState(), seeded: true, toast: null });
-          get().ensureReminders();
+          set({ ...emptyData(), seeded: true, toast: null });
         },
         async resetDemo() {
           await get().seedDemo(true);
@@ -405,7 +405,9 @@ export const useApp = create<AppState>()(
     },
     {
       name: "fastattoo-v1",
-      version: 1,
+      version: 2,
+      // v1 → v2 : retire les données de démonstration déjà enregistrées chez les visiteurs.
+      migrate: (persisted, from) => (from < 2 ? withoutDemoData(persisted) : persisted) as AppState,
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       partialize: ({ toast: _toast, ...rest }) => {
