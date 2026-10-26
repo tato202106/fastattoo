@@ -31,6 +31,7 @@ function preview(m: Message | undefined, side: "client" | "artist"): string {
 export function ConversationList() {
   const session = useApp((s) => s.session)!;
   const conversations = useApp((s) => s.conversations);
+  const sent = useApp((s) => s.sentRequests ?? []);
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const side = session.role === "artist" ? "artist" : "client";
   const mine = conversations
@@ -48,7 +49,30 @@ export function ConversationList() {
           Non lus
         </Chip>
       </div>
-      {mine.length === 0 && <p className="px-4 py-10 text-center text-muted">Aucune conversation pour l&apos;instant.</p>}
+      {side === "client" && sent.length > 0 && (
+        <section aria-labelledby="sent-requests" className="pb-2">
+          <h2 id="sent-requests" className="px-4 pt-2 pb-1 text-sm font-semibold text-muted lg:px-0">
+            Mes demandes de projets
+          </h2>
+          <ul>
+            {sent.map((r) => (
+              <li key={r.token}>
+                <Link href={`/demande/${r.token}`} className="tap flex items-center gap-3 px-4 py-3 active:bg-surface-2 lg:rounded-2xl lg:px-2">
+                  <Avatar image={r.artistAvatar} size={52} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="truncate font-semibold">{r.artistName}</p>
+                      <span className="shrink-0 text-xs text-muted">{timeAgo(r.at)}</span>
+                    </div>
+                    <p className="truncate text-sm text-muted">{r.description}</p>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {mine.length === 0 && sent.length === 0 && <p className="px-4 py-10 text-center text-muted">Aucune conversation pour l&apos;instant.</p>}
       <ul>
         {mine.map((c) => {
           const last = c.messages.at(-1);

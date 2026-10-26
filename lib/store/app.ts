@@ -42,8 +42,20 @@ export interface NewRequestInput extends Omit<ProjectRequest, "id" | "status" | 
   artistAvatar: ImageAsset;
 }
 
+/** Demande envoyée à un vrai tatoueur : la conversation est sur le serveur, accessible par son lien privé. */
+export interface SentRequest {
+  token: string;
+  artistName: string;
+  artistSlug: string;
+  artistAvatar: ImageAsset;
+  description: string;
+  at: number;
+}
+
 interface AppState {
   session: Session | null;
+  /** Demandes envoyées aux vrais tatoueurs (lien vers la conversation). */
+  sentRequests: SentRequest[];
   favorites: string[];
   requests: ProjectRequest[];
   conversations: Conversation[];
@@ -66,6 +78,7 @@ interface AppState {
   login(role: Role, name: string, email: string): void;
   logout(): void;
   toggleFavorite(artistId: string): void;
+  addSentRequest(request: SentRequest): void;
 
   createRequest(input: NewRequestInput): ProjectRequest;
   acceptRequest(requestId: string): void;
@@ -147,6 +160,7 @@ export const useApp = create<AppState>()(
 
       return {
         session: null,
+        sentRequests: [],
         favorites: [],
         ...emptyData(),
         artistProfile: null,
@@ -163,6 +177,9 @@ export const useApp = create<AppState>()(
         },
         logout() {
           set({ session: null, toast: null });
+        },
+        addSentRequest(request) {
+          set((s) => ({ sentRequests: [request, ...(s.sentRequests ?? []).filter((x) => x.token !== request.token)].slice(0, 50) }));
         },
         toggleFavorite(artistId) {
           set((s) => ({ favorites: s.favorites.includes(artistId) ? s.favorites.filter((id) => id !== artistId) : [artistId, ...s.favorites] }));

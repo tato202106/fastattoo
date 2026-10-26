@@ -4,6 +4,7 @@ import { ArtistSpace } from "@/components/espace/ArtistSpace";
 import { autoPublish, listPhotos } from "@/lib/accounts/db";
 import { currentAccount } from "@/lib/accounts/session";
 import { hasPaidAccess } from "@/lib/billing/access";
+import { inboxFor } from "@/lib/requests/db";
 
 export const metadata: Metadata = { title: "Espace tatoueur", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -21,10 +22,17 @@ export default async function ArtistSpacePage({ searchParams }: PageProps<"/espa
     if (result?.account) account = result.account;
   }
   const photos = await listPhotos(account.id).catch(() => []);
+  const inbox = await inboxFor(account.id).catch(() => []);
   const { bienvenue } = await searchParams;
   return (
     <main className="mx-auto max-w-xl px-4 pt-safe pb-nav lg:pt-6">
-      <ArtistSpace initial={account} photos={photos} paid={paid} welcome={bienvenue === "1"} />
+      <ArtistSpace
+        initial={account}
+        photos={photos}
+        paid={paid}
+        welcome={bienvenue === "1"}
+        requests={{ total: inbox.length, unread: inbox.filter((i) => i.unread).length }}
+      />
     </main>
   );
 }

@@ -25,6 +25,8 @@ export interface WizardArtist {
   styles: StyleSlug[];
   priceFrom: number;
   nextSlots: Slot[];
+  /** Vrai tatoueur inscrit : la demande lui est envoyée (Neon + e-mail). Sinon profil d'exemple, demande locale. */
+  real?: boolean;
 }
 
 interface Draft {
@@ -63,6 +65,7 @@ export function RequestWizard({ artist }: { artist: WizardArtist }) {
   const session = useApp((s) => s.session);
   const login = useApp((s) => s.login);
   const createRequest = useApp((s) => s.createRequest);
+  const addSentRequest = useApp((s) => s.addSentRequest);
 
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<Draft>(() => ({
@@ -79,7 +82,9 @@ export function RequestWizard({ artist }: { artist: WizardArtist }) {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const restored = useRef(false);
 
@@ -106,6 +111,10 @@ export function RequestWizard({ artist }: { artist: WizardArtist }) {
     }
   }, [draft, artist.slug]);
 
+  // Coordonnées pour recevoir la réponse (pré-remplies si le client est déjà connecté).
+  const contactName = name || session?.name || "";
+  const contactEmail = email || session?.email || "";
+
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => ({ ...d, [k]: v }));
 
   const canContinue: Record<number, boolean> = {
@@ -116,7 +125,7 @@ export function RequestWizard({ artist }: { artist: WizardArtist }) {
     5: draft.budget != null,
     6: draft.flexible || draft.dates.length > 0,
     7: uploading === 0,
-    8: !sending && (session != null || (name.trim().length > 1 && /\S+@\S+\.\S+/.test(email))),
+    8: !sending && (artist.real ? contactName.trim().length > 1 && /\S+@\S+\.\S+/.test(contactEmail) : session != null || (name.trim().length > 1 && /\S+@\S+\.\S+/.test(email))),
   };
 
   const back = () => (step > 1 ? setStep(step - 1) : router.back());
@@ -140,7 +149,52 @@ export function RequestWizard({ artist }: { artist: WizardArtist }) {
     );
   };
 
+  const clearDraft = () => {
+    try {
+      sessionStorage.removeItem(draftKey(artist.slug));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  // Vrai tatoueur : la demande part sur le serveur (enregistrée, e-mail au tatoueur et au client).
+  const sendToArtist = async () => {
+    if (!draft.zone || !draft.size || !draft.budget) return;
+    setSending(true);
+    setSendError(null);
+    try {
+      const res = await fetch("/api/demandes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          artistId: artist.id,
+          name: contactName,
+          email: contactEmail,
+          phone,
+          description: draft.description.trim(),
+          styles: draft.styles,
+          zone: draft.zone,
+          size: draft.size,
+          budgetMin: draft.budget[0],
+          budgetMax: draft.budget[1],
+          dates: draft.flexible ? [] : draft.dates,
+          inspirations: draft.inspirations,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { token?: string; error?: string };
+      if (!res.ok || !data.token) throw new Error(data.error ?? "Envoi impossible. Réessaie.");
+      if (!session) login("client", contactName, contactEmail);
+      addSentRequest({ token: data.token, artistName: artist.name, artistSlug: artist.slug, artistAvatar: artist.avatar, description: draft.description.trim(), at: Date.now() });
+      clearDraft();
+      router.replace(`/demande/${data.token}?envoye=1`);
+    } catch (e) {
+      setSendError((e as Error).message || "Connexion impossible. Réessaie.");
+      setSending(false);
+    }
+  };
+
   const send = () => {
+    if (artist.real) return void sendToArtist();
     if (!draft.zone || !draft.size || !draft.budget) return;
     setSending(true);
     if (!session) login("client", name, email);
@@ -158,11 +212,7 @@ export function RequestWizard({ artist }: { artist: WizardArtist }) {
       dates: draft.flexible ? [] : draft.dates,
       inspirations: draft.inspirations,
     });
-    try {
-      sessionStorage.removeItem(draftKey(artist.slug));
-    } catch {
-      /* ignore */
-    }
+    clearDraft();
     router.replace(`/messages/${request.conversationId}?envoye=1`);
   };
 
@@ -415,7 +465,40 @@ export function RequestWizard({ artist }: { artist: WizardArtist }) {
                 </div>
               ))}
             </dl>
-            {hydrated && !session && (
+            {hydrated && artist.real && (
+              <div className="space-y-3 rounded-2xl border border-border p-4">
+                <p className="text-sm font-semibold">Pour recevoir la réponse de {artist.name}</p>
+                <input value={contactName} onChange={(e) => setName(e.target.value)} placeholder="Ton prénom" autoComplete="given-name" className="h-12 w-full rounded-xl border border-border bg-surface px-3 outline-none focus:border-fg" />
+                <input
+                  value={contactEmail}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Ton e-mail"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  className="h-12 w-full rounded-xl border border-border bg-surface px-3 outline-none focus:border-fg"
+                />
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Ton téléphone (facultatif)"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  className="h-12 w-full rounded-xl border border-border bg-surface px-3 outline-none focus:border-fg"
+                />
+                <p className="text-xs text-muted">
+                  Tu recevras la réponse par e-mail, avec un lien pour continuer la conversation sur Fastattoo. Ton e-mail n&apos;est pas montré au tatoueur ; ton
+                  téléphone, seulement si tu le donnes.
+                </p>
+              </div>
+            )}
+            {sendError && (
+              <p role="alert" className="rounded-xl bg-accent-soft p-3 text-sm font-medium text-accent">
+                {sendError}
+              </p>
+            )}
+            {hydrated && !session && !artist.real && (
               <div className="space-y-3 rounded-2xl border border-border p-4">
                 <p className="text-sm font-semibold">Pour recevoir la réponse de {artist.name}</p>
                 <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ton prénom" autoComplete="given-name" className="h-12 w-full rounded-xl border border-border bg-surface px-3 outline-none focus:border-fg" />

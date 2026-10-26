@@ -164,3 +164,10 @@ Limites connues :
   - sans prix renseigné, « sur devis » ;
   - un portfolio vide affiche un message d'attente.
 - L'onglet **Profil** mène un tatoueur connecté à son espace (`/espace-tatoueur`).
+
+## Demandes de projets et messagerie (vrais tatoueurs)
+
+- **Les demandes aux vrais tatoueurs (`acc-…`) passent par le serveur** : enregistrées dans Neon (`project_requests`, `request_messages`, tables créées au premier usage), e-mail au tatoueur et e-mail de confirmation au client (Resend, `lib/email.ts`). Les profils d'exemple gardent la demande locale (le profil précise qu'elle n'est transmise à personne).
+- **Le client n'a pas de compte** : il suit la conversation par un **lien privé** `/demande/<jeton>` (jeton aléatoire de 256 bits), reçu par e-mail et gardé dans « Messages » sur son appareil. Son e-mail n'est jamais montré au tatoueur ; son téléphone seulement s'il le donne.
+- **Le tatoueur répond depuis son espace** (`/espace-tatoueur/demandes`) : message, proposition de rendez-vous (date + heure), ou clôture polie. Chaque message déclenche un e-mail à l'autre personne avec le lien de la conversation. Le client peut accepter le rendez-vous proposé (statut « Rendez-vous confirmé »).
+- **Expéditeur des e-mails** : `SIGNUP_NOTIFY_FROM` doit utiliser un domaine vérifié chez Resend, sinon Resend n'envoie qu'à l'adresse du compte Resend.
