@@ -21,6 +21,7 @@ export function PaymentPage({
   cancelled,
   fixPayment,
   stripe,
+  initialPlan = "annual",
 }: {
   name: string;
   fromSignup: boolean;
@@ -29,9 +30,11 @@ export function PaymentPage({
   fixPayment: boolean;
   /** Clé Stripe détectée côté serveur (sinon le paywall s'affiche quand même, le paiement explique ce qui manque). */
   stripe: boolean;
+  /** Forfait choisi sur /devenir-tatoueur (l'annuel par défaut). */
+  initialPlan?: PlanId;
 }) {
   const router = useRouter();
-  const [plan, setPlan] = useState<PlanId>("annual");
+  const [plan, setPlan] = useState<PlanId>(initialPlan);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const firstName = name.split(" ")[0] || "toi";
