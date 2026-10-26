@@ -9,25 +9,26 @@ import { Icon } from "@/components/ui/Icon";
 import { useApp } from "@/lib/store/app";
 import type { Role } from "@/lib/store/model";
 
+/** Espace tatoueur réel (compte + mot de passe + abonnement). */
+const ARTIST_LOGIN_PATH = "/espace-tatoueur/connexion";
+
 /**
- * Inscription / connexion simplifiée : un choix de profil + prénom + e-mail.
- * ⚠️ Démo : pas de mot de passe ni de vérification, la session reste sur l'appareil.
- * En production : lien magique par e-mail ou OAuth (Apple / Google).
+ * Connexion simplifiée côté client (personne qui cherche un tatoueur) :
+ * prénom + e-mail, la session reste sur l'appareil.
+ * Les tatoueurs sont renvoyés vers leur vrai espace (/espace-tatoueur/connexion).
  */
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const login = useApp((s) => s.login);
-  const artistProfile = useApp((s) => s.artistProfile);
-  const [role, setRole] = useState<Role>(params.get("role") === "artist" ? "artist" : "client");
-  const [name, setName] = useState(role === "artist" ? "Léa" : "Thomas");
+  const [role, setRole] = useState<Role>("client");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    login(role, name, email);
-    if (role === "artist") router.replace(artistProfile?.onboarded ? "/pro" : "/pro/onboarding");
-    else router.replace(params.get("next") ?? "/");
+    login("client", name, email);
+    router.replace(params.get("next") ?? "/");
   };
 
   return (
@@ -54,8 +55,8 @@ export function LoginForm() {
             role="radio"
             aria-checked={role === value}
             onClick={() => {
-              setRole(value);
-              setName(value === "artist" ? "Léa" : "Thomas");
+              if (value === "artist") router.push(ARTIST_LOGIN_PATH);
+              else setRole(value);
             }}
             className={clsx("tap flex h-32 flex-col justify-between rounded-2xl border-2 p-4 text-left", role === value ? "border-fg bg-surface" : "border-border bg-surface")}
           >
@@ -67,7 +68,7 @@ export function LoginForm() {
 
       <div className="mt-6 space-y-3">
         <label className="block">
-          <span className="text-sm font-medium">Prénom{role === "artist" ? " ou nom d'artiste" : ""}</span>
+          <span className="text-sm font-medium">Prénom</span>
           <input value={name} onChange={(e) => setName(e.target.value)} required autoComplete="given-name" className="mt-1 h-12 w-full rounded-xl border border-border bg-surface px-3 outline-none focus:border-fg" />
         </label>
         <label className="block">
@@ -77,8 +78,11 @@ export function LoginForm() {
       </div>
 
       <p className="mt-4 rounded-xl bg-surface-2 p-3 text-xs text-muted">
-        Version de démonstration : pas de mot de passe, tes données restent sur cet appareil.
-        {role === "artist" && " Tu seras connecté·e au compte de démo « Léa Ink » (Nantes)."}
+        Pas de mot de passe : tes favoris et tes demandes restent sur cet appareil. Tu es tatoueur·se ?{" "}
+        <a href={ARTIST_LOGIN_PATH} className="font-semibold text-accent underline underline-offset-2">
+          Connecte-toi à ton espace tatoueur
+        </a>
+        .
       </p>
 
       <div className="mt-auto pt-6 pb-[var(--safe-bottom)]">

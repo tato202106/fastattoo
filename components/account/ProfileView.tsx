@@ -41,7 +41,6 @@ export function ProfileView() {
   const session = useApp((s) => s.session)!;
   const appointments = useApp((s) => s.appointments);
   const logout = useApp((s) => s.logout);
-  const resetDemo = useApp((s) => s.resetDemo);
   const subscription = useApp((s) => s.subscription);
   const [push, setPush] = useState<string>(() => (typeof Notification === "undefined" ? "unsupported" : Notification.permission));
   const [reviewFor, setReviewFor] = useState<Appointment | null>(null);
@@ -128,21 +127,7 @@ export function ProfileView() {
       </section>
 
       <section className="divide-y divide-border overflow-hidden rounded-2xl bg-surface shadow-card">
-        <Row
-          icon="refresh"
-          label={isArtist ? "Passer en mode client" : "Passer en mode tatoueur·se"}
-          onClick={() => {
-            logout();
-            router.push(isArtist ? "/connexion" : "/connexion?role=artist");
-          }}
-        />
-        <Row
-          icon="trash"
-          label="Réinitialiser la démo"
-          onClick={() => {
-            if (confirm("Remettre les données de démo à zéro ?")) void resetDemo();
-          }}
-        />
+        <Row icon="refresh" label="Espace tatoueur·se" href="/espace-tatoueur/connexion" />
         <Row
           icon="logout"
           label="Se déconnecter"
