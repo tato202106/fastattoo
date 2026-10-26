@@ -113,7 +113,7 @@ export function SubscriptionPage() {
           <section className="rounded-2xl bg-success/10 p-4">
             <p className="font-semibold text-success">Tu profites déjà du meilleur tarif 🎉</p>
             <p className="mt-1 text-sm">
-              {formatPrice(savings.saved)} d&apos;économie par an par rapport au forfait mensuel (−{savings.percent} %).
+              {ANNUAL_PERK} par rapport au forfait mensuel, soit {formatPrice(savings.perMonth)} par mois.
             </p>
           </section>
         )}

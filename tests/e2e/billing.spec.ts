@@ -27,7 +27,7 @@ test("abonné mensuel : slides pour passer à l'annuel, puis passage à 179 €"
   await expect(sheet.getByText("179 € pour 12 mois")).toBeVisible();
   await expect(sheet.getByRole("region", { name: "Avantages du forfait annuel" })).toBeVisible();
   await sheet.getByRole("button", { name: "Slide 2" }).click();
-  await expect(sheet.getByText("49 € d'économie")).toBeInViewport();
+  await expect(sheet.getByText("14,92 € par mois")).toBeInViewport();
   await sheet.getByRole("button", { name: "Plus tard" }).click();
   await expect(sheet).toBeHidden();
 
