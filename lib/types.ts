@@ -60,6 +60,11 @@ export interface Slot {
   time: string; // HH:mm
 }
 
+/** Horaires d'ouverture d'un jour (HH:mm), ou null = fermé. */
+export type DayHours = { open: string; close: string } | null;
+/** Horaires de la semaine, du lundi (index 0) au dimanche (index 6). */
+export type OpeningHours = DayHours[];
+
 export interface Artist {
   id: string;
   slug: string;
@@ -89,6 +94,8 @@ export interface Artist {
   promoted?: boolean;
   /** Fin de la mise en avant « Parrain » (AAAA-MM-JJ), voir lib/referral.ts. */
   sponsorUntil?: string;
+  /** Horaires d'ouverture renseignés par un tatoueur inscrit (lib/accounts/availability.ts). */
+  openingHours?: OpeningHours;
 }
 
 /** Version légère d'un tatoueur pour les listes, la carte et le carrousel. */

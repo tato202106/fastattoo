@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ArtistSpace } from "@/components/espace/ArtistSpace";
-import { autoPublish, listPhotos } from "@/lib/accounts/db";
+import { autoPublish, listPhotos, listSlots } from "@/lib/accounts/db";
 import { currentAccount } from "@/lib/accounts/session";
 import { hasPaidAccess } from "@/lib/billing/access";
 import { inboxFor } from "@/lib/requests/db";
@@ -22,6 +22,7 @@ export default async function ArtistSpacePage({ searchParams }: PageProps<"/espa
     if (result?.account) account = result.account;
   }
   const photos = await listPhotos(account.id).catch(() => []);
+  const slots = await listSlots(account.id).catch(() => []);
   const inbox = await inboxFor(account.id).catch(() => []);
   const { bienvenue } = await searchParams;
   return (
@@ -29,6 +30,7 @@ export default async function ArtistSpacePage({ searchParams }: PageProps<"/espa
       <ArtistSpace
         initial={account}
         photos={photos}
+        slots={slots}
         paid={paid}
         welcome={bienvenue === "1"}
         requests={{ total: inbox.length, unread: inbox.filter((i) => i.unread).length }}
