@@ -2,7 +2,8 @@ import "server-only";
 import { neon } from "@neondatabase/serverless";
 import { tokenHash } from "../auth/password";
 import { hasPaidAccess } from "../billing/access";
-import type { BodyZone, ImageAsset, PortfolioItem, StyleSlug } from "../types";
+import type { BodyZone, ImageAsset, OpeningHours, PortfolioItem, Slot, StyleSlug } from "../types";
+import { readOpeningHours } from "./availability";
 import { geocode } from "./geocode";
 import { artistIdFor, autoPublishDecision, subscriptionEnded, toArtistRow, type ArtistTitle, type ProfileInput, type ProfileStatus } from "./profile";
 
@@ -11,7 +12,8 @@ import { artistIdFor, autoPublishDecision, subscriptionEnded, toArtistRow, type 
  * - artist_accounts : identifiants, profil (brouillon ou publié), abonnement Stripe ;
  * - artist_sessions : sessions de connexion (empreinte du jeton du cookie) ;
  * - password_resets : liens « mot de passe oublié » (empreinte, 1 h, usage unique) ;
- * - account_photos : photos du portfolio ajoutées depuis l'espace tatoueur.
+ * - account_photos : photos du portfolio ajoutées depuis l'espace tatoueur ;
+ * - account_slots : créneaux libres (horaires d'ouverture : colonne opening_hours).
  * À la publication (automatique dès que l'abonnement est actif), le profil et
  * ses photos sont copiés dans les tables `artists` et `portfolio_items` lues par le site.
  */
@@ -88,6 +90,19 @@ export function ensureAccountTables(): Promise<void> {
         zone text NOT NULL,
         created_at timestamptz NOT NULL DEFAULT now()
       )`;
+      await sql`ALTER TABLE artist_accounts ADD COLUMN IF NOT EXISTS opening_hours jsonb`;
+      await sql`CREATE TABLE IF NOT EXISTS account_slots (
+        account_id integer NOT NULL REFERENCES artist_accounts(id) ON DELETE CASCADE,
+        date date NOT NULL,
+        time time NOT NULL,
+        PRIMARY KEY (account_id, date, time)
+      )`;
+      // Horaires affichés sur le profil public (table du site, créée par scripts/seed-neon.ts).
+      try {
+        await sql`ALTER TABLE artists ADD COLUMN IF NOT EXISTS opening_hours jsonb`;
+      } catch (e) {
+        console.error("[compte] colonne artists.opening_hours :", e);
+      }
     })();
     ready.catch(() => {
       ready = null;
@@ -119,6 +134,8 @@ export interface Account {
   artistId: string | null;
   subscriptionId: string | null;
   subscriptionStatus: string | null;
+  /** Horaires d'ouverture (null tant qu'ils ne sont pas renseignés). */
+  openingHours: OpeningHours | null;
   createdAt: string;
 }
 
@@ -148,6 +165,7 @@ function toAccount(r: Row): Account {
     artistId: r.artist_id ?? null,
     subscriptionId: r.stripe_subscription_id ?? null,
     subscriptionStatus: r.subscription_status ?? null,
+    openingHours: readOpeningHours(r.opening_hours),
     createdAt: iso(r.created_at) ?? "",
   };
 }
@@ -421,15 +439,16 @@ async function upsertArtist(a: Account): Promise<string> {
   if (a.lat == null || a.lng == null) throw new Error("Profil sans localisation : impossible de le publier.");
   const row = toArtistRow({ ...a, lat: a.lat, lng: a.lng });
   await connect()`INSERT INTO artists (id, slug, name, title, city, city_slug, studio, address, lat, lng, rating, review_count, verified,
-      styles, price_from, hourly_rate, bio, avatar, cover, instagram, promoted)
+      styles, price_from, hourly_rate, bio, avatar, cover, instagram, promoted, opening_hours)
     VALUES (${row.id}, ${row.slug}, ${row.name}, ${row.title}, ${row.city}, ${row.city_slug}, ${row.studio}, ${row.address}, ${row.lat}, ${row.lng},
       0, 0, true, ${row.styles}, ${row.price_from}, ${row.hourly_rate}, ${row.bio}, ${JSON.stringify(row.avatar)}::jsonb, ${JSON.stringify(row.cover)}::jsonb,
-      ${row.instagram}, false)
+      ${row.instagram}, false, ${a.openingHours ? JSON.stringify(a.openingHours) : null}::jsonb)
     ON CONFLICT (id) DO UPDATE SET slug = EXCLUDED.slug, name = EXCLUDED.name, title = EXCLUDED.title, city = EXCLUDED.city,
       city_slug = EXCLUDED.city_slug, studio = EXCLUDED.studio, address = EXCLUDED.address, lat = EXCLUDED.lat, lng = EXCLUDED.lng,
       styles = EXCLUDED.styles, price_from = EXCLUDED.price_from, hourly_rate = EXCLUDED.hourly_rate, bio = EXCLUDED.bio,
-      avatar = EXCLUDED.avatar, cover = EXCLUDED.cover, instagram = EXCLUDED.instagram`;
+      avatar = EXCLUDED.avatar, cover = EXCLUDED.cover, instagram = EXCLUDED.instagram, opening_hours = EXCLUDED.opening_hours`;
   await syncPortfolio(a.id);
+  await syncSlots(a.id);
   return row.slug;
 }
 
@@ -451,6 +470,7 @@ export async function unpublishAccount(id: number, status: "hidden" | "draft" = 
   await ensureAccountTables();
   const sql = connect();
   await sql`DELETE FROM portfolio_items WHERE artist_id = ${artistIdFor(id)}`;
+  await sql`DELETE FROM slots WHERE artist_id = ${artistIdFor(id)}`;
   await sql`DELETE FROM artists WHERE id = ${artistIdFor(id)}`;
   await sql`UPDATE artist_accounts SET profile_status = ${status}, artist_id = NULL, updated_at = now() WHERE id = ${id}`;
 }
@@ -493,4 +513,51 @@ export async function countPhotos(accountId: number): Promise<number> {
 async function refreshPublishedPortfolio(accountId: number): Promise<void> {
   const account = await getAccount(accountId);
   if (account?.status === "published") await syncPortfolio(accountId);
+}
+
+/* ---------- Horaires et créneaux libres ---------- */
+
+/** Enregistre les horaires d'ouverture ; mis à jour sur le profil public s'il est en ligne. */
+export async function setOpeningHours(accountId: number, hours: OpeningHours): Promise<Account | null> {
+  await ensureAccountTables();
+  const sql = connect();
+  const json = JSON.stringify(hours);
+  const rows = (await sql`UPDATE artist_accounts SET opening_hours = ${json}::jsonb, updated_at = now() WHERE id = ${accountId} RETURNING *`) as Row[];
+  const account = rows[0] ? toAccount(rows[0]) : null;
+  if (account?.status === "published") await sql`UPDATE artists SET opening_hours = ${json}::jsonb WHERE id = ${artistIdFor(accountId)}`;
+  return account;
+}
+
+/** Créneaux libres à venir du compte. */
+export async function listSlots(accountId: number): Promise<Slot[]> {
+  await ensureAccountTables();
+  const rows = (await connect()`SELECT to_char(date, 'YYYY-MM-DD') AS date, to_char(time, 'HH24:MI') AS time
+    FROM account_slots WHERE account_id = ${accountId} AND date >= CURRENT_DATE ORDER BY date, time`) as Row[];
+  return rows.map((r) => ({ date: r.date, time: r.time }));
+}
+
+/** Remplace les créneaux libres d'un jour ; visibles sur le profil public s'il est en ligne. */
+export async function setDaySlots(accountId: number, date: string, times: string[]): Promise<Slot[]> {
+  await ensureAccountTables();
+  const sql = connect();
+  await sql`DELETE FROM account_slots WHERE account_id = ${accountId} AND date = ${date}::date`;
+  if (times.length) {
+    await sql`INSERT INTO account_slots (account_id, date, time)
+      SELECT ${accountId}, ${date}::date, t::time FROM unnest(${times}::text[]) AS t ON CONFLICT DO NOTHING`;
+  }
+  // Ménage : créneaux passés.
+  await sql`DELETE FROM account_slots WHERE account_id = ${accountId} AND date < CURRENT_DATE - 1`;
+  const account = await getAccount(accountId);
+  if (account?.status === "published") await syncSlots(accountId);
+  return listSlots(accountId);
+}
+
+/** Copie les créneaux à venir du compte dans `slots` (table lue par le site). */
+async function syncSlots(accountId: number): Promise<void> {
+  const sql = connect();
+  const artistId = artistIdFor(accountId);
+  await sql`DELETE FROM slots WHERE artist_id = ${artistId}`;
+  await sql`INSERT INTO slots (artist_id, date, time)
+    SELECT ${artistId}, date, time FROM account_slots WHERE account_id = ${accountId} AND date >= CURRENT_DATE
+    ON CONFLICT DO NOTHING`;
 }

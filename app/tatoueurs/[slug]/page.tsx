@@ -16,6 +16,7 @@ import { Rating } from "@/components/ui/Rating";
 import { artists } from "@/lib/data";
 import { formatTime, relativeDay } from "@/lib/dates";
 import { toCard } from "@/lib/search/engine";
+import { groupOpeningHours } from "@/lib/accounts/availability";
 import { isDemoArtist, isNewArtist, priceFromLabel } from "@/lib/showcase";
 import { styleLabel } from "@/lib/styles";
 
@@ -158,6 +159,19 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
         </div>
         <p className="mt-2 text-sm text-muted">Le prix final dépend de la taille, de l&apos;emplacement et du niveau de détail.</p>
       </Section>
+
+      {!demo && a.openingHours && (
+        <Section title="Horaires" id="horaires">
+          <dl className="divide-y divide-border rounded-2xl bg-surface shadow-card">
+            {groupOpeningHours(a.openingHours).map((g) => (
+              <div key={g.days} className="flex min-h-12 items-center justify-between gap-3 px-4 text-[15px]">
+                <dt className="font-medium">{g.days}</dt>
+                <dd className={g.hours ? "" : "text-muted"}>{g.hours ?? "Fermé"}</dd>
+              </div>
+            ))}
+          </dl>
+        </Section>
+      )}
 
       {!demo && (
       <Section title="Disponibilités" id="dispos">

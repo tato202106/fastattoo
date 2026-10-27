@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import type { Artist, SearchQuery } from "../types";
+import { readOpeningHours } from "../accounts/availability";
 import { toISODate } from "../referral";
 import { MemoryArtistRepository } from "./memory";
 import type { ArtistRepository } from "./repository";
@@ -26,7 +27,7 @@ async function loadArtists(): Promise<Artist[]> {
     sql`SELECT id, artist_id, author, rating, to_char(date, 'YYYY-MM-DD') AS date, text, style
         FROM reviews ORDER BY date DESC`,
     sql`SELECT artist_id, to_char(date, 'YYYY-MM-DD') AS date, to_char(time, 'HH24:MI') AS time
-        FROM slots ORDER BY date, time`,
+        FROM slots WHERE date >= CURRENT_DATE ORDER BY date, time`,
    ])) as [Row[], Row[], Row[], Row[]];
 
   const portfolio = groupByArtist(portfolioRows);
@@ -75,6 +76,7 @@ async function loadArtists(): Promise<Artist[]> {
     ...(a.instagram ? { instagram: a.instagram } : {}),
     ...(a.promoted ? { promoted: true } : {}),
     ...(toISODate(a.sponsor_until) ? { sponsorUntil: toISODate(a.sponsor_until) } : {}),
+    ...(readOpeningHours(a.opening_hours) ? { openingHours: readOpeningHours(a.opening_hours)! } : {}),
   }));
 }
 

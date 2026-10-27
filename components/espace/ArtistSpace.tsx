@@ -10,7 +10,8 @@ import type { Account } from "@/lib/accounts/db";
 import { artistSlugFor, missingForSubmission } from "@/lib/accounts/profile";
 import { PAYMENT_PATH } from "@/lib/billing/access";
 import type { PlanId } from "@/lib/billing/plans";
-import type { PortfolioItem } from "@/lib/types";
+import type { PortfolioItem, Slot } from "@/lib/types";
+import { AvailabilityManager } from "./AvailabilityManager";
 import { PhotosManager } from "./PhotosManager";
 import { ProfileForm } from "./ProfileForm";
 
@@ -18,12 +19,14 @@ import { ProfileForm } from "./ProfileForm";
 export function ArtistSpace({
   initial,
   photos,
+  slots,
   paid,
   welcome,
   requests,
 }: {
   initial: Account;
   photos: PortfolioItem[];
+  slots: Slot[];
   paid: boolean;
   welcome: boolean;
   requests: { total: number; unread: number };
@@ -89,6 +92,13 @@ export function ArtistSpace({
           Mes photos
         </h2>
         <PhotosManager initial={photos} styles={account.styles} published={account.status === "published"} />
+      </section>
+
+      <section aria-labelledby="disponibilites" className="space-y-4">
+        <h2 id="disponibilites" className="font-display text-[24px] font-bold">
+          Horaires et créneaux
+        </h2>
+        <AvailabilityManager initialHours={account.openingHours} initialSlots={slots} published={account.status === "published"} />
       </section>
 
       <section aria-labelledby="profil" className="scroll-mt-4 space-y-4">
