@@ -69,3 +69,17 @@ describe("nameScore", () => {
     expect(nameScore("zzz", "Léa Ink")).toBe(0);
   });
 });
+
+describe("villes belges", () => {
+  it("reconnaît Bruxelles, ses communes et les villes wallonnes", () => {
+    expect(parseQuery("Fine Line Bruxelles", NAMES).city?.slug).toBe("bruxelles");
+    expect(parseQuery("tatoueur Ixelles", NAMES).city?.slug).toBe("bruxelles");
+    expect(parseQuery("Saint-Gilles", NAMES).city?.slug).toBe("bruxelles");
+    expect(parseQuery("blackwork Liège", NAMES).city?.slug).toBe("liege");
+    expect(parseQuery("Mons", NAMES).city?.slug).toBe("mons");
+  });
+
+  it("tolère une faute de frappe sur un nom long", () => {
+    expect(parseQuery("Bruxeles", NAMES).city?.slug).toBe("bruxelles");
+  });
+});

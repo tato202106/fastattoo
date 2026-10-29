@@ -28,3 +28,16 @@ describe("geo", () => {
     expect(formatDistance(null)).toBeNull();
   });
 });
+
+describe("villes du site", () => {
+  it("chaque ville a un pays connu et un nom reconnu par la recherche", async () => {
+    const { CITIES } = await import("@/lib/cities");
+    const { COUNTRIES } = await import("@/lib/countries");
+    const { normalize } = await import("@/lib/text");
+    const codes = COUNTRIES.map((c) => c.code as string);
+    for (const c of CITIES) {
+      expect(codes).toContain(c.country);
+      expect(c.aliases).toContain(normalize(c.name));
+    }
+  });
+});

@@ -243,7 +243,7 @@ export function Explorer() {
   /* ---------- Libellés ---------- */
   const total = result?.total ?? 0;
   const title = loading && !result ? "Recherche…" : `${total} tatoueur${total > 1 ? "s" : ""}${position && !areaBBox && !result?.parsed.city ? " autour" : ""}`;
-  let subtitle = "Partout en France";
+  let subtitle = "Partout en France et en Belgique";
   if (areaBBox) subtitle = "Dans cette zone";
   else if (result?.parsed.city) subtitle = `À ${result.parsed.city.name} et alentours`;
   else if (position) subtitle = `À moins de ${filters.radiusKm} km`;

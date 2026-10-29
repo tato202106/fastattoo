@@ -62,9 +62,9 @@ async function queryNominatim(q: string, country: CountryCode): Promise<GeocodeR
 }
 
 /** Grandes villes connues du site : repli si le service de géocodage ne répond pas. */
-function knownCity(city: string): GeocodeResult | null {
+function knownCity(city: string, country: CountryCode): GeocodeResult | null {
   const key = normalize(city);
-  const found = key ? CITIES.find((c) => c.aliases.includes(key) || normalize(c.name) === key) : undefined;
+  const found = key ? CITIES.find((c) => c.country === country && (c.aliases.includes(key) || normalize(c.name) === key)) : undefined;
   return found ? { lat: found.lat, lng: found.lng, city: found.name } : null;
 }
 
@@ -79,12 +79,13 @@ export async function geocode(address: string, city: string, country: CountryCod
       const precise = await queryNominatim(`${address}, ${city}`.replace(/^,\s*|,\s*$/g, ""), country);
       if (precise) return precise;
     }
-    return city ? queryNominatim(city, country) : null;
+    if (!city) return null;
+    return (await queryNominatim(city, country)) ?? knownCity(city, country);
   }
   if (address) {
     const precise = await query(`${address} ${city}`.trim(), false);
     if (precise) return precise;
   }
   if (!city) return null;
-  return (await query(city, true)) ?? knownCity(city);
+  return (await query(city, true)) ?? knownCity(city, country);
 }
