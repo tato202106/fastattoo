@@ -250,6 +250,12 @@ export function RequestWizard({ artist }: { artist: WizardArtist }) {
 
       <main className="flex-1 px-4 pt-4 pb-[calc(110px+var(--safe-bottom))]">
         <h1 className="font-display text-[28px] leading-tight font-bold">{questions[step]}</h1>
+        {!artist.real && (step === 1 || step === TOTAL) && (
+          <p className="mt-3 rounded-2xl bg-surface-2 p-3 text-sm text-muted">
+            <span className="font-semibold text-fg">Profil exemple :</span> ce n&apos;est pas un vrai tatoueur, ta demande ne sera transmise à
+            personne. Choisis un tatoueur sans le badge « Profil exemple » pour un vrai projet.
+          </p>
+        )}
 
         {step === 1 && (
           <div className="mt-5">
