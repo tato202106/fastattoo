@@ -2,16 +2,15 @@ import "server-only";
 import { CITIES } from "../cities";
 import { DEFAULT_COUNTRY, type CountryCode } from "../countries";
 import { normalize } from "../text";
+import { fromNominatim, type GeocodeResult, type NominatimPlace } from "./geocode-parse";
 
 /**
- * Géocodage d'une adresse française (Géoplateforme IGN, gratuit, sans clé),
- * pour placer le tatoueur sur la carte. Renvoie null si rien n'est trouvé.
+ * Géocodage d'une adresse pour placer le tatoueur sur la carte :
+ * - France : Géoplateforme IGN (gratuit, sans clé) ;
+ * - Belgique : Nominatim (OpenStreetMap, gratuit, sans clé), limité au pays.
+ * Renvoie null si rien n'est trouvé.
  */
-export interface GeocodeResult {
-  lat: number;
-  lng: number;
-  city: string;
-}
+export type { GeocodeResult } from "./geocode-parse";
 
 const ENDPOINTS = ["https://data.geopf.fr/geocodage/search", "https://api-adresse.data.gouv.fr/search/"];
 
@@ -39,6 +38,29 @@ async function query(q: string, municipality: boolean): Promise<GeocodeResult | 
   return null;
 }
 
+/**
+ * Nominatim (OpenStreetMap) pour les pays hors France. Politique d'usage :
+ * un User-Agent qui identifie le site et au plus une requête par seconde,
+ * largement respecté ici (une requête à l'enregistrement d'un profil).
+ */
+const NOMINATIM = "https://nominatim.openstreetmap.org/search";
+const USER_AGENT = "Fastattoo/1.0 (+https://fastattoo.vercel.app)";
+
+async function queryNominatim(q: string, country: CountryCode): Promise<GeocodeResult | null> {
+  const params = new URLSearchParams({ q, countrycodes: country.toLowerCase(), format: "jsonv2", addressdetails: "1", limit: "1", "accept-language": "fr" });
+  try {
+    const res = await fetch(`${NOMINATIM}?${params}`, {
+      headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+      signal: AbortSignal.timeout(6000),
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return fromNominatim((await res.json()) as NominatimPlace[]);
+  } catch {
+    return null;
+  }
+}
+
 /** Grandes villes connues du site : repli si le service de géocodage ne répond pas. */
 function knownCity(city: string): GeocodeResult | null {
   const key = normalize(city);
@@ -47,13 +69,18 @@ function knownCity(city: string): GeocodeResult | null {
 }
 
 /**
- * Adresse complète d'abord (précis), sinon la ville seule.
- * Le service actuel ne couvre que la France : pour un autre pays on ne tente
- * rien plutôt que de placer le tatoueur dans une commune française homonyme
- * (ex. Mons). Un service international reste à brancher pour la Belgique.
+ * Adresse complète d'abord (précis), sinon la ville seule. Chaque pays a son
+ * service, pour ne jamais placer un tatoueur dans une commune homonyme d'un
+ * autre pays (ex. Mons, en Belgique et en France).
  */
 export async function geocode(address: string, city: string, country: CountryCode = DEFAULT_COUNTRY): Promise<GeocodeResult | null> {
-  if (country !== "FR") return null;
+  if (country !== "FR") {
+    if (address) {
+      const precise = await queryNominatim(`${address}, ${city}`.replace(/^,\s*|,\s*$/g, ""), country);
+      if (precise) return precise;
+    }
+    return city ? queryNominatim(city, country) : null;
+  }
   if (address) {
     const precise = await query(`${address} ${city}`.trim(), false);
     if (precise) return precise;

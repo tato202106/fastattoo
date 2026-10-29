@@ -14,11 +14,10 @@ export async function PUT(req: Request) {
 
   const place = await geocode(parsed.value.address, parsed.value.city, parsed.value.country);
   if (!place) {
-    const error =
-      parsed.value.country === "FR"
-        ? "Adresse introuvable. Vérifie l'orthographe de l'adresse et de la ville."
-        : "La localisation des adresses dans ce pays arrive bientôt.";
-    return Response.json({ errors: { [parsed.value.address ? "address" : "city"]: error } }, { status: 422 });
+    return Response.json(
+      { errors: { [parsed.value.address ? "address" : "city"]: "Adresse introuvable. Vérifie l'orthographe de l'adresse, de la ville et le pays choisi." } },
+      { status: 422 },
+    );
   }
   try {
     const updated = await updateProfile(account.id, parsed.value, place);
