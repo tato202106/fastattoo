@@ -1,6 +1,8 @@
 import { accountForReset, createPasswordReset } from "@/lib/accounts/db";
 import { newToken } from "@/lib/auth/password";
 import { sendEmail } from "@/lib/email";
+import { LIMITS } from "@/lib/rate-limit";
+import { tooMany } from "@/lib/rate-limit-db";
 
 /**
  * Envoie un lien pour choisir un nouveau mot de passe (valable 1 h).
@@ -11,6 +13,8 @@ export async function POST(req: Request) {
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase().slice(0, 160) : "";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return Response.json({ error: "Adresse e-mail invalide." }, { status: 422 });
   if (!process.env.DATABASE_URL) return Response.json({ error: "Service indisponible pour le moment." }, { status: 503 });
+  const blocked = await tooMany(req, LIMITS.resetIp, [[LIMITS.resetEmail, email]]);
+  if (blocked) return blocked;
   try {
     const accountId = await accountForReset(email);
     if (accountId) {

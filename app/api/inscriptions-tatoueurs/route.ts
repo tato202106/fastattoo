@@ -2,6 +2,8 @@ import { neon } from "@neondatabase/serverless";
 import { createAccount, EmailTakenError, findAccountByEmail } from "@/lib/accounts/db";
 import { signIn } from "@/lib/accounts/session";
 import { hashPassword, passwordError } from "@/lib/auth/password";
+import { LIMITS } from "@/lib/rate-limit";
+import { tooMany } from "@/lib/rate-limit-db";
 import { parseSignup } from "@/lib/signup";
 import { notifySignup } from "@/lib/signup-notify";
 
@@ -15,6 +17,8 @@ export async function POST(req: Request) {
   if (!body) return Response.json({ error: "Requête invalide" }, { status: 400 });
   // Champ piège invisible : rempli uniquement par les robots.
   if (typeof body.website === "string" && body.website) return Response.json({ ok: true });
+  const blocked = await tooMany(req, LIMITS.signup);
+  if (blocked) return blocked;
 
   const parsed = parseSignup(body);
   const pwError = passwordError(body.password);

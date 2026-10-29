@@ -1,13 +1,19 @@
 import { storeUpload, UploadError } from "@/lib/media/upload";
+import { LIMITS, sameOrigin } from "@/lib/rate-limit";
+import { tooMany } from "@/lib/rate-limit-db";
 
 export const runtime = "nodejs";
 
 /**
- * Upload d'une photo (inspirations, messagerie de la démo).
+ * Upload d'une photo (inspirations d'une demande, sans compte).
  * Le portfolio des comptes tatoueurs passe par /api/compte/photos.
- * NB : pas d'authentification pour l'instant (démo) — à protéger avant prod.
+ * Ouvert sans connexion, donc protégé : envoi depuis une page du site
+ * uniquement, et nombre d'envois limité par visiteur.
  */
 export async function POST(req: Request) {
+  if (!sameOrigin(req.headers, req.url)) return Response.json({ error: "Envoi refusé" }, { status: 403 });
+  const blocked = await tooMany(req, LIMITS.upload);
+  if (blocked) return blocked;
   const form = await req.formData().catch(() => null);
   try {
     const alt = form?.get("alt");

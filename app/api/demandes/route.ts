@@ -1,18 +1,9 @@
 import { newToken } from "@/lib/auth/password";
 import { sendEmail } from "@/lib/email";
+import { LIMITS } from "@/lib/rate-limit";
+import { tooMany } from "@/lib/rate-limit-db";
 import { createRequest, recipientFor } from "@/lib/requests/db";
 import { accountIdFromArtistId, newRequestEmailToArtist, parseNewRequest, requestConfirmationEmail } from "@/lib/requests/model";
-
-// Limite simple contre l'envoi en rafale (par instance du serveur).
-const recent = new Map<string, number[]>();
-function tooMany(ip: string): boolean {
-  const now = Date.now();
-  const list = (recent.get(ip) ?? []).filter((t) => now - t < 10 * 60_000);
-  list.push(now);
-  if (recent.size > 5000) recent.clear();
-  recent.set(ip, list);
-  return list.length > 6;
-}
 
 /**
  * Demande de projet envoyée à un vrai tatoueur : enregistrée dans Neon,
@@ -20,8 +11,9 @@ function tooMany(ip: string): boolean {
  */
 export async function POST(req: Request) {
   if (!process.env.DATABASE_URL) return Response.json({ error: "Envoi indisponible pour le moment." }, { status: 503 });
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "?";
-  if (tooMany(ip)) return Response.json({ error: "Trop de demandes envoyées. Réessaie dans quelques minutes." }, { status: 429 });
+  // Limite contre l'envoi en rafale, partagée entre toutes les instances du serveur.
+  const blocked = await tooMany(req, LIMITS.request);
+  if (blocked) return blocked;
 
   const parsed = parseNewRequest(await req.json().catch(() => null));
   if (!parsed.ok) return Response.json({ errors: parsed.errors, error: Object.values(parsed.errors)[0] }, { status: 422 });

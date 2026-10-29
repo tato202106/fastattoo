@@ -1,6 +1,8 @@
 import { findAccountByEmail } from "@/lib/accounts/db";
 import { signIn } from "@/lib/accounts/session";
 import { verifyPassword } from "@/lib/auth/password";
+import { LIMITS } from "@/lib/rate-limit";
+import { tooMany } from "@/lib/rate-limit-db";
 
 const WRONG = "E-mail ou mot de passe incorrect.";
 
@@ -11,6 +13,8 @@ export async function POST(req: Request) {
   const password = typeof body?.password === "string" ? body.password.slice(0, 200) : "";
   if (!email || !password) return Response.json({ error: WRONG }, { status: 401 });
   if (!process.env.DATABASE_URL) return Response.json({ error: "Connexion indisponible pour le moment." }, { status: 503 });
+  const blocked = await tooMany(req, LIMITS.loginIp, [[LIMITS.loginEmail, email]]);
+  if (blocked) return blocked;
   try {
     const account = await findAccountByEmail(email);
     if (!account || !verifyPassword(password, account.passwordHash)) {

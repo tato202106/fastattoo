@@ -1,9 +1,13 @@
 import { adminConfigured, signInAdmin, signOutAdmin } from "@/lib/accounts/admin-session";
 import { checkAdminPassword } from "@/lib/auth/admin";
+import { LIMITS } from "@/lib/rate-limit";
+import { tooMany } from "@/lib/rate-limit-db";
 
 /** Connexion à la page de validation (mot de passe ADMIN_PASSWORD). */
 export async function POST(req: Request) {
   if (!adminConfigured()) return Response.json({ error: "Ajoute la variable ADMIN_PASSWORD (8 caractères minimum) sur Vercel." }, { status: 503 });
+  const blocked = await tooMany(req, LIMITS.admin);
+  if (blocked) return blocked;
   const body = (await req.json().catch(() => null)) as { password?: unknown } | null;
   if (!checkAdminPassword(process.env.ADMIN_PASSWORD, body?.password)) {
     await new Promise((r) => setTimeout(r, 600));
