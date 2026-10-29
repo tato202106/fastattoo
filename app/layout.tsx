@@ -2,9 +2,13 @@ import type { Metadata, Viewport } from "next";
 import { AppRuntime } from "@/components/layout/AppRuntime";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { DesktopNav } from "@/components/layout/DesktopNav";
+import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  // Adresse de base des images d'aperçu (opengraph-image) et des liens partagés.
+  metadataBase: new URL(siteUrl()),
+  openGraph: { type: "website", siteName: "Fastattoo", locale: "fr_FR" },
   title: { default: "Fastattoo — Trouve ton tatoueur", template: "%s · Fastattoo" },
   description: "Les meilleurs tatoueurs autour de toi. Explore leurs portfolios, choisis ton style et demande ton projet en quelques secondes.",
   applicationName: "Fastattoo",
