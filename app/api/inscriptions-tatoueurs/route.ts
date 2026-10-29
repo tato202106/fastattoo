@@ -50,8 +50,9 @@ export async function POST(req: Request) {
       consent boolean NOT NULL
     )`;
     await sql`ALTER TABLE artist_signups ADD COLUMN IF NOT EXISTS referrer text`;
-    const rows = (await sql`INSERT INTO artist_signups (name, studio, address, city, email, phone, instagram, styles, price_from, message, consent, referrer)
-      VALUES (${s.name}, ${s.studio}, ${s.address}, ${s.city}, ${s.email}, ${s.phone}, ${s.instagram}, ${s.styles}, ${s.priceFrom}, ${s.message}, ${s.consent}, ${s.referrer})
+    await sql`ALTER TABLE artist_signups ADD COLUMN IF NOT EXISTS country text NOT NULL DEFAULT 'FR'`;
+    const rows = (await sql`INSERT INTO artist_signups (name, studio, address, city, country, email, phone, instagram, styles, price_from, message, consent, referrer)
+      VALUES (${s.name}, ${s.studio}, ${s.address}, ${s.city}, ${s.country}, ${s.email}, ${s.phone}, ${s.instagram}, ${s.styles}, ${s.priceFrom}, ${s.message}, ${s.consent}, ${s.referrer})
       RETURNING id`) as { id: number }[];
     signupId = rows[0]?.id ?? null;
   } catch {
@@ -66,6 +67,7 @@ export async function POST(req: Request) {
       studio: s.studio,
       address: s.address,
       city: s.city,
+      country: s.country,
       styles: s.styles,
       priceFrom: s.priceFrom,
       instagram: s.instagram,

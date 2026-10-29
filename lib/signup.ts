@@ -1,3 +1,4 @@
+import { parseCountry, type CountryCode } from "./countries";
 import { STYLES } from "./styles";
 import type { StyleSlug } from "./types";
 
@@ -7,6 +8,7 @@ export interface ArtistSignup {
   studio: string;
   address: string;
   city: string;
+  country: CountryCode;
   email: string;
   phone: string;
   instagram: string;
@@ -34,6 +36,7 @@ export function parseSignup(input: Record<string, unknown>): SignupResult {
   const studio = text(input.studio, 120);
   const address = text(input.address, 200);
   const city = text(input.city, 80);
+  const country = parseCountry(input.country);
   const email = text(input.email, 160).toLowerCase();
   const phone = text(input.phone, 30);
   const instagram = text(input.instagram, 60).replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//, "").replace(/\/$/, "");
@@ -50,5 +53,5 @@ export function parseSignup(input: Record<string, unknown>): SignupResult {
   if (input.consent !== true) errors.consent = "Ton accord est nécessaire pour créer ton profil.";
 
   if (Object.keys(errors).length) return { ok: false, errors };
-  return { ok: true, value: { name, studio, address, city, email, phone, instagram, styles: [...new Set(styles)], priceFrom, message, referrer, consent: true } };
+  return { ok: true, value: { name, studio, address, city, country, email, phone, instagram, styles: [...new Set(styles)], priceFrom, message, referrer, consent: true } };
 }

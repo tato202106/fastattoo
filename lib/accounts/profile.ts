@@ -1,4 +1,5 @@
 import { avatarAsset, artAsset } from "../art/assets";
+import { parseCountry, type CountryCode } from "../countries";
 import { STYLES } from "../styles";
 import { slugify } from "../text";
 import type { StyleSlug } from "../types";
@@ -46,6 +47,7 @@ export interface ProfileInput {
   studio: string;
   address: string;
   city: string;
+  country: CountryCode;
   styles: StyleSlug[];
   priceFrom: number | null;
   hourlyRate: number | null;
@@ -84,6 +86,7 @@ export function parseProfile(input: Record<string, unknown>): ProfileResult {
   const studio = text(input.studio, 120);
   const address = text(input.address, 200);
   const city = text(input.city, 80);
+  const country = parseCountry(input.country);
   const styles = [...new Set((Array.isArray(input.styles) ? input.styles : []).filter((s): s is StyleSlug => typeof s === "string" && STYLE_SLUGS.has(s)))];
   const priceFrom = euros(input.priceFrom);
   const hourlyRate = euros(input.hourlyRate);
@@ -94,7 +97,7 @@ export function parseProfile(input: Record<string, unknown>): ProfileResult {
   if (!city) errors.city = "Indique ta ville.";
   if (styles.length === 0) errors.styles = "Choisis au moins un style.";
   if (Object.keys(errors).length) return { ok: false, errors };
-  return { ok: true, value: { name, title, studio, address, city, styles, priceFrom, hourlyRate, bio, instagram } };
+  return { ok: true, value: { name, title, studio, address, city, country, styles, priceFrom, hourlyRate, bio, instagram } };
 }
 
 /** Ce qui manque pour un profil complet (conseils affichés dans l'espace tatoueur). */

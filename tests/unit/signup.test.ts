@@ -44,3 +44,18 @@ describe("parrainage", () => {
     expect(mail.text).toContain("Parrainé·e par : @lea.ink");
   });
 });
+
+describe("pays", () => {
+  it("garde la Belgique et met la France par défaut", () => {
+    const be = parseSignup({ ...valid, country: "be" });
+    if (!be.ok) throw new Error("inscription invalide");
+    expect(be.value.country).toBe("BE");
+    expect(signupEmail(be.value).text).toContain("Pays : Belgique");
+
+    const missing = parseSignup(valid);
+    const unknown = parseSignup({ ...valid, country: "XX" });
+    if (!missing.ok || !unknown.ok) throw new Error("inscription invalide");
+    expect(missing.value.country).toBe("FR");
+    expect(unknown.value.country).toBe("FR");
+  });
+});

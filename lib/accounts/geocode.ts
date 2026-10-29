@@ -1,5 +1,6 @@
 import "server-only";
 import { CITIES } from "../cities";
+import { DEFAULT_COUNTRY, type CountryCode } from "../countries";
 import { normalize } from "../text";
 
 /**
@@ -45,8 +46,14 @@ function knownCity(city: string): GeocodeResult | null {
   return found ? { lat: found.lat, lng: found.lng, city: found.name } : null;
 }
 
-/** Adresse complète d'abord (précis), sinon la ville seule. */
-export async function geocode(address: string, city: string): Promise<GeocodeResult | null> {
+/**
+ * Adresse complète d'abord (précis), sinon la ville seule.
+ * Le service actuel ne couvre que la France : pour un autre pays on ne tente
+ * rien plutôt que de placer le tatoueur dans une commune française homonyme
+ * (ex. Mons). Un service international reste à brancher pour la Belgique.
+ */
+export async function geocode(address: string, city: string, country: CountryCode = DEFAULT_COUNTRY): Promise<GeocodeResult | null> {
+  if (country !== "FR") return null;
   if (address) {
     const precise = await query(`${address} ${city}`.trim(), false);
     if (precise) return precise;

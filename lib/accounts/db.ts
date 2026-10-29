@@ -2,6 +2,7 @@ import "server-only";
 import { neon } from "@neondatabase/serverless";
 import { tokenHash } from "../auth/password";
 import { hasPaidAccess } from "../billing/access";
+import { parseCountry, type CountryCode } from "../countries";
 import type { BodyZone, ImageAsset, OpeningHours, PortfolioItem, Slot, StyleSlug } from "../types";
 import { readOpeningHours } from "./availability";
 import { geocode } from "./geocode";
@@ -103,6 +104,8 @@ export function ensureAccountTables(): Promise<void> {
       } catch (e) {
         console.error("[compte] colonne artists.opening_hours :", e);
       }
+      // Comptes créés avant l'ouverture à la Belgique : France par défaut.
+      await sql`ALTER TABLE artist_accounts ADD COLUMN IF NOT EXISTS country text NOT NULL DEFAULT 'FR'`;
     })();
     ready.catch(() => {
       ready = null;
@@ -121,6 +124,7 @@ export interface Account {
   studio: string;
   address: string;
   city: string;
+  country: CountryCode;
   lat: number | null;
   lng: number | null;
   styles: StyleSlug[];
@@ -152,6 +156,7 @@ function toAccount(r: Row): Account {
     studio: r.studio ?? "",
     address: r.address ?? "",
     city: r.city ?? "",
+    country: parseCountry(r.country),
     lat: r.lat ?? null,
     lng: r.lng ?? null,
     styles: r.styles ?? [],
@@ -185,14 +190,15 @@ export async function createAccount(data: {
   studio: string;
   address: string;
   city: string;
+  country: CountryCode;
   styles: StyleSlug[];
   priceFrom: number | null;
   instagram: string;
 }): Promise<number> {
   await ensureAccountTables();
   const sql = connect();
-  const rows = (await sql`INSERT INTO artist_accounts (email, password_hash, signup_id, name, studio, address, city, styles, price_from, instagram)
-    VALUES (${data.email.toLowerCase()}, ${data.passwordHash}, ${data.signupId}, ${data.name}, ${data.studio}, ${data.address}, ${data.city}, ${data.styles}, ${data.priceFrom}, ${data.instagram})
+  const rows = (await sql`INSERT INTO artist_accounts (email, password_hash, signup_id, name, studio, address, city, country, styles, price_from, instagram)
+    VALUES (${data.email.toLowerCase()}, ${data.passwordHash}, ${data.signupId}, ${data.name}, ${data.studio}, ${data.address}, ${data.city}, ${data.country}, ${data.styles}, ${data.priceFrom}, ${data.instagram})
     ON CONFLICT (email) DO NOTHING
     RETURNING id`) as Row[];
   if (!rows[0]) throw new EmailTakenError();
@@ -260,6 +266,7 @@ export async function accountForReset(email: string): Promise<number | null> {
       studio: signup.studio ?? "",
       address: signup.address ?? "",
       city: signup.city ?? "",
+      country: parseCountry(signup.country),
       styles: signup.styles ?? [],
       priceFrom: signup.price_from ?? null,
       instagram: signup.instagram ?? "",
@@ -300,7 +307,7 @@ export async function resetPassword(token: string, passwordHash: string): Promis
 export async function updateProfile(id: number, p: ProfileInput, coords: { lat: number; lng: number; city: string }): Promise<Account | null> {
   await ensureAccountTables();
   const rows = (await connect()`UPDATE artist_accounts SET
-      name = ${p.name}, title = ${p.title}, studio = ${p.studio}, address = ${p.address}, city = ${coords.city || p.city},
+      name = ${p.name}, title = ${p.title}, studio = ${p.studio}, address = ${p.address}, city = ${coords.city || p.city}, country = ${p.country},
       lat = ${coords.lat}, lng = ${coords.lng}, styles = ${p.styles}, price_from = ${p.priceFrom}, hourly_rate = ${p.hourlyRate},
       bio = ${p.bio}, instagram = ${p.instagram}, updated_at = now()
     WHERE id = ${id} RETURNING *`) as Row[];
@@ -390,7 +397,7 @@ export async function autoPublish(accountId: number): Promise<AutoPublishResult>
   if (!account) return { outcome: "skip", account: null };
   let decision = autoPublishDecision({ ...account, paid: hasPaidAccess(account.subscriptionStatus) });
   if (decision === "needs-location" && (account.address || account.city)) {
-    const place = await geocode(account.address, account.city).catch(() => null);
+    const place = await geocode(account.address, account.city, account.country).catch(() => null);
     if (place) {
       const rows = (await connect()`UPDATE artist_accounts SET lat = ${place.lat}, lng = ${place.lng},
           city = ${account.city || place.city}, updated_at = now() WHERE id = ${accountId} RETURNING *`) as Row[];

@@ -8,6 +8,7 @@ import { buttonClass } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { PAYMENT_PATH } from "@/lib/billing/access";
 import { isPlanId } from "@/lib/billing/plans";
+import { COUNTRIES, DEFAULT_COUNTRY } from "@/lib/countries";
 import { PRO_ANNUAL_PERK, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY } from "@/lib/pro-offer";
 import type { ArtistSignup } from "@/lib/signup";
 import { STYLES } from "@/lib/styles";
@@ -103,6 +104,15 @@ export function SignupForm() {
         </Field>
         <Field label="Ville" error={errors.city}>
           <input name="city" required autoComplete="address-level2" className={INPUT} />
+        </Field>
+        <Field label="Pays" error={errors.country}>
+          <select name="country" defaultValue={DEFAULT_COUNTRY} autoComplete="country" className={INPUT}>
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </Field>
         <Field label="E-mail" error={errors.email}>
           <input name="email" type="email" inputMode="email" required autoComplete="email" placeholder="toi@exemple.fr" className={INPUT} />

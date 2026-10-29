@@ -1,3 +1,4 @@
+import { countryName } from "./countries";
 import type { ArtistSignup } from "./signup";
 import { styleLabel } from "./styles";
 
@@ -11,6 +12,7 @@ export function signupEmail(s: ArtistSignup): { subject: string; text: string } 
     line("Studio", s.studio),
     line("Adresse", s.address),
     line("Ville", s.city),
+    line("Pays", countryName(s.country)),
     line("E-mail", s.email),
     line("Téléphone", s.phone),
     line("Instagram", s.instagram ? `https://instagram.com/${s.instagram}` : ""),

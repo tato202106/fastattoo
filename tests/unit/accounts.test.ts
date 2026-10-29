@@ -141,3 +141,12 @@ describe("publication automatique du profil", () => {
     for (const s of [null, "active", "trialing", "past_due", "incomplete"]) expect(subscriptionEnded(s)).toBe(false);
   });
 });
+
+describe("comptes tatoueurs : pays", () => {
+  it("garde le pays choisi dans le profil (France par défaut)", () => {
+    const be = parseProfile({ name: "A", city: "Mons", country: "BE", styles: ["dotwork"] });
+    const fr = parseProfile({ name: "A", city: "Lyon", styles: ["dotwork"] });
+    expect(be.ok && be.value.country).toBe("BE");
+    expect(fr.ok && fr.value.country).toBe("FR");
+  });
+});

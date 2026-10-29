@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ARTIST_TITLES, type ProfileErrors } from "@/lib/accounts/profile";
 import type { Account } from "@/lib/accounts/db";
+import { COUNTRIES } from "@/lib/countries";
 import { STYLES } from "@/lib/styles";
 import type { StyleSlug } from "@/lib/types";
 
@@ -73,6 +74,15 @@ export function ProfileForm({ account, onSaved }: { account: Account; onSaved: (
       </Field>
       <Field label="Ville" error={errors.city}>
         <input name="city" required defaultValue={account.city} autoComplete="address-level2" className={INPUT} />
+      </Field>
+      <Field label="Pays" error={errors.country}>
+        <select name="country" defaultValue={account.country} autoComplete="country" className={INPUT}>
+          {COUNTRIES.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.name}
+            </option>
+          ))}
+        </select>
       </Field>
 
       <fieldset>
