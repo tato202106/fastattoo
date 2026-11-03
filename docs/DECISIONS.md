@@ -164,3 +164,13 @@ Limites connues :
   - sans prix renseigné, « sur devis » ;
   - un portfolio vide affiche un message d'attente.
 - L'onglet **Profil** mène un tatoueur connecté à son espace (`/espace-tatoueur`).
+
+## Agenda du tatoueur (espace réel)
+
+- **`/espace-tatoueur/agenda`** (lien « Mon agenda » dans l'espace tatoueur, réservé aux abonnés comme le reste de l'espace) : le vrai agenda, enregistré dans Neon (table `agenda_entries`, `/api/compte/agenda`). Le calendrier à 3 créneaux de `/pro/calendrier` reste la maquette de démonstration.
+- **Horaires libres** : un rendez-vous a une date, une heure de début au quart d'heure près et une durée (15 min à 12 h, jusqu'à minuit). On y saisit le client (nom obligatoire ; téléphone, e-mail, projet, notes facultatifs) et si l'acompte est versé.
+- **Indisponibilités** : des jours entiers, d'une date à une autre (congés, convention…), avec un motif facultatif.
+- **Conflits** : un chevauchement ou un rendez-vous posé sur un jour indisponible déclenche un avertissement, sans bloquer l'enregistrement. Le tatoueur décide.
+- **Vues** : « Jour » (barre des 7 jours de la semaine) et « Semaine », navigation de semaine en semaine.
+- **Fuseau** : jours et heures stockés en texte (heure locale du studio). « Aujourd'hui » et « demain » sont calculés dans le fuseau Europe/Paris, identique à Bruxelles.
+- **Rappel e-mail la veille** : un cron Vercel (`vercel.json`, chaque jour à 16 h UTC, soit 17 h ou 18 h à Paris) appelle `/api/agenda/rappels`, protégé par `CRON_SECRET`. Un e-mail part via Resend à chaque client qui a rendez-vous le lendemain et dont l'e-mail est renseigné. La réponse du client arrive chez le tatoueur (`reply-to`). Un rappel n'est envoyé qu'une fois par rendez-vous (`reminder_sent_at`), et à nouveau si la date, l'heure ou l'e-mail change. Seuls les tatoueurs abonnés en profitent.

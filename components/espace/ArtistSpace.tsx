@@ -52,6 +52,17 @@ export function ArtistSpace({ initial, photos, paid, welcome }: { initial: Accou
 
       <StatusCard account={account} paid={paid} />
 
+      <Link href="/espace-tatoueur/agenda" className="tap flex items-center gap-4 rounded-2xl bg-surface p-4 shadow-card">
+        <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-fg text-bg">
+          <Icon name="calendar" size={20} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">Mon agenda</span>
+          <span className="block text-sm text-muted">Tes rendez-vous, tes congés et un rappel e-mail à tes clients la veille.</span>
+        </span>
+        <Icon name="chevronRight" size={18} className="text-muted" />
+      </Link>
+
       <section aria-labelledby="photos" className="space-y-4">
         <h2 id="photos" className="font-display text-[24px] font-bold">
           Mes photos
