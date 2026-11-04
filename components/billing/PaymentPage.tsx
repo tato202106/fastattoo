@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { ANNUAL_PERK, annualSavings, formatPrice, PLAN_FEATURES, PLANS, type PlanId } from "@/lib/billing/plans";
+import { PRO_GUARANTEE } from "@/lib/pro-offer";
 import { ManageSubscription } from "./ManageSubscription";
 import { PayButton, PaymentTrust } from "./PayButton";
 
@@ -182,6 +183,13 @@ export function PaymentPage({
           ))}
         </ul>
       </section>
+
+      <p className="flex items-start gap-2 rounded-2xl bg-success/10 p-4 text-[15px]">
+        <Icon name="verified" size={20} className="mt-0.5 shrink-0 text-success" />
+        <span>
+          <strong>{PRO_GUARANTEE}.</strong> Si Fastattoo ne te convient pas, on te rembourse sans justification.
+        </span>
+      </p>
 
       <p className="text-center text-sm text-muted">
         Pas tout de suite ?{" "}

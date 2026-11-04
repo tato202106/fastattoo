@@ -4,30 +4,35 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { buttonClass } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
-import { annualSavings, formatPrice } from "@/lib/billing/plans";
-import { PRO_ANNUAL_PERK, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL, proSignupUrlFor } from "@/lib/pro-offer";
+import { annualSavings, formatPrice, freeMonthsLabel } from "@/lib/billing/plans";
+import { PRO_ANNUAL_PERK, PRO_GUARANTEE_DAYS, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL, proSignupUrlFor } from "@/lib/pro-offer";
 import { SPONSOR_BOOST_MONTHS } from "@/lib/referral";
 
 export const metadata: Metadata = {
   title: "Tatoueurs : rejoins Fastattoo",
-  description: `Sois visible auprès des personnes qui cherchent un tatoueur près de chez elles. ${PRO_PRICE_ANNUAL} € par an (${PRO_ANNUAL_PERK}) ou ${PRO_PRICE_MONTHLY} € par mois.`,
+  description: `Sois visible auprès des personnes qui cherchent un tatoueur près de chez elles. ${PRO_PRICE_ANNUAL} € par an (${PRO_ANNUAL_PERK}) ou ${PRO_PRICE_MONTHLY} € par mois. Satisfait ou remboursé pendant ${PRO_GUARANTEE_DAYS} jours.`,
 };
 
 const BENEFITS: { icon: IconName; title: string; text: string }[] = [
   { icon: "map", title: "Sois trouvé·e près de chez toi", text: "Ton profil apparaît sur la carte et dans la recherche par ville et par style." },
   { icon: "image", title: "Un portfolio qui donne envie", text: "Tes plus beaux tatouages en grand, classés par style, lisibles sur téléphone." },
   { icon: "inbox", title: "Des demandes déjà détaillées", text: "Style, zone, taille, budget, photos de référence : tu as tout pour répondre vite." },
-  { icon: "calendar", title: "Tes rendez-vous au même endroit", text: "Propose tes créneaux, échange avec tes clients et garde ton agenda à jour." },
+  {
+    icon: "calendar",
+    title: "Moins de rendez-vous oubliés",
+    text: "Ton agenda en ligne : rendez-vous, congés, et un rappel e-mail envoyé automatiquement à tes clients la veille.",
+  },
 ];
 
 const STEPS = [
   "Remplis le formulaire d'inscription (2 minutes).",
-  "Choisis ton forfait et active-le avec le paiement sécurisé.",
-  "On crée ton profil avec toi : photos, styles, prix, adresse du studio.",
+  "Choisis ton forfait et paie en ligne, en toute sécurité.",
+  "Ton profil est en ligne sur la carte dès le paiement validé. Ajoute tes photos quand tu veux.",
   "Tu reçois tes premières demandes de projets.",
 ];
 
 const savings = annualSavings();
+const FREE_MONTHS = freeMonthsLabel();
 
 function SignupButton({ className }: { className?: string }) {
   if (!PRO_SIGNUP_URL) {
@@ -163,7 +168,11 @@ export default function BecomeArtistPage() {
             <p className="mt-1 text-sm text-muted">
               Soit {formatPrice(savings.perMonth)} par mois, en un seul paiement
             </p>
-            <p className="mt-3 inline-flex rounded-full bg-accent-soft px-3 py-1 text-sm font-bold text-accent">{PRO_ANNUAL_PERK} par rapport au mensuel</p>
+            <p className="mt-3 inline-flex rounded-full bg-accent-soft px-3 py-1 text-sm font-bold text-accent">
+              {PRO_ANNUAL_PERK}
+              {FREE_MONTHS ? `, soit ${FREE_MONTHS}` : " par rapport au mensuel"}
+            </p>
+            <p className="mt-1 text-xs text-muted">Au lieu de {formatPrice(savings.yearlyMonthlyCost)} sur 12 mois au mensuel.</p>
           </PlanCard>
           <PlanCard plan="monthly" label="Choisir le mensuel" className="border border-border">
             <p className="font-semibold">Mensuel</p>
@@ -173,6 +182,13 @@ export default function BecomeArtistPage() {
             </p>
             <p className="mt-1 text-sm text-muted">Sans engagement</p>
           </PlanCard>
+        </div>
+        <div className="mt-4 flex items-start gap-3 rounded-[var(--radius-card)] bg-success/10 p-4">
+          <Icon name="verified" size={24} className="shrink-0 text-success" />
+          <p className="text-[15px]">
+            <strong>Satisfait ou remboursé.</strong> Si Fastattoo ne te convient pas, on te rembourse à 100 % pendant les {PRO_GUARANTEE_DAYS} premiers jours,
+            sans justification.
+          </p>
         </div>
         <ul className="mt-4 space-y-2 text-[15px]">
           {["Résiliable à tout moment", "Profil et portfolio mis en avant sur la carte", "Demandes, messages et agenda inclus", "Paiement sécurisé par Stripe"].map((t) => (

@@ -24,12 +24,20 @@ export const PLANS: Record<PlanId, Plan> = {
 
 export const CURRENCY = "eur";
 
-/** Argument commercial du forfait annuel (« 1 mois offert »). Pas d'essai gratuit : paiement immédiat. */
+/** Argument commercial du forfait annuel (« 49 € d'économie »). Pas d'essai gratuit : paiement immédiat. */
 export const ANNUAL_PERK = PRO_ANNUAL_PERK;
 
-/** L'argument reste vrai : l'annuel coûte moins que 11 mois au mensuel. */
+/** L'argument reste vrai : l'annuel coûte moins cher que 12 mois au mensuel. */
 export function annualPerkIsTrue(): boolean {
-  return PLANS.annual.amount < PLANS.monthly.amount * 11;
+  return PLANS.annual.amount < PLANS.monthly.amount * 12;
+}
+
+/** « 2 mois offerts » si l'économie vaut tout juste 2 mois, « plus de 2 mois offerts » au-delà. */
+export function freeMonthsLabel(): string {
+  const { saved, freeMonths } = annualSavings();
+  if (freeMonths < 1) return "";
+  const more = saved > freeMonths * PLANS.monthly.amount ? "plus de " : "";
+  return `${more}${freeMonths} mois offert${freeMonths > 1 ? "s" : ""}`;
 }
 
 /** Ce que le forfait inclut (fonctionnalités réellement disponibles dans l'app). */
@@ -37,7 +45,7 @@ export const PLAN_FEATURES = [
   "Profil visible sur la carte et dans la recherche",
   "Portfolio illimité, photos optimisées automatiquement",
   "Demandes de projet et messagerie avec les clients",
-  "Calendrier et propositions de créneaux",
+  "Agenda en ligne et rappel e-mail à tes clients la veille du rendez-vous",
   "Statistiques de ton activité",
 ] as const;
 

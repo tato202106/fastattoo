@@ -7,10 +7,14 @@ export const PRO_PRICE_MONTHLY = 19;
 export const PRO_PRICE_ANNUAL = 179;
 /**
  * Argument mis en avant sur le forfait annuel (pas de période d'essai : le
- * paiement est immédiat). Vrai tant que l'annuel coûte moins que 11 mois au
- * mensuel (179 € < 11 × 19 € = 209 €), vérifié par les tests.
+ * paiement est immédiat) : l'économie réelle par rapport à 12 mois au mensuel,
+ * calculée à partir des prix (12 × 19 € − 179 € = 49 €), vérifiée par les tests.
  */
-export const PRO_ANNUAL_PERK = "1 mois offert";
+export const PRO_ANNUAL_PERK = `${PRO_PRICE_MONTHLY * 12 - PRO_PRICE_ANNUAL} € d'économie`;
+
+/** Garantie « satisfait ou remboursé » sur l'abonnement : remboursement à 100 % pendant ce nombre de jours. */
+export const PRO_GUARANTEE_DAYS = 30;
+export const PRO_GUARANTEE = `Satisfait ou remboursé : 100 % remboursé pendant ${PRO_GUARANTEE_DAYS} jours`;
 
 /**
  * Lien du formulaire d'inscription (formulaire du site, ou un lien externe).
