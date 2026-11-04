@@ -5,12 +5,12 @@ import type { ReactNode } from "react";
 import { buttonClass } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { annualSavings, formatPrice, freeMonthsLabel } from "@/lib/billing/plans";
-import { PRO_ANNUAL_PERK, PRO_GUARANTEE_DAYS, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL, proSignupUrlFor } from "@/lib/pro-offer";
+import { PRO_ANNUAL_PERK, PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL, proSignupUrlFor } from "@/lib/pro-offer";
 import { SPONSOR_BOOST_MONTHS } from "@/lib/referral";
 
 export const metadata: Metadata = {
   title: "Tatoueurs : rejoins Fastattoo",
-  description: `Sois visible auprès des personnes qui cherchent un tatoueur près de chez elles. ${PRO_PRICE_ANNUAL} € par an (${PRO_ANNUAL_PERK}) ou ${PRO_PRICE_MONTHLY} € par mois. Satisfait ou remboursé pendant ${PRO_GUARANTEE_DAYS} jours.`,
+  description: `Sois visible auprès des personnes qui cherchent un tatoueur près de chez elles. ${PRO_PRICE_ANNUAL} € par an (${PRO_ANNUAL_PERK}) ou ${PRO_PRICE_MONTHLY} € par mois.`,
 };
 
 const BENEFITS: { icon: IconName; title: string; text: string }[] = [
@@ -182,13 +182,6 @@ export default function BecomeArtistPage() {
             </p>
             <p className="mt-1 text-sm text-muted">Sans engagement</p>
           </PlanCard>
-        </div>
-        <div className="mt-4 flex items-start gap-3 rounded-[var(--radius-card)] bg-success/10 p-4">
-          <Icon name="verified" size={24} className="shrink-0 text-success" />
-          <p className="text-[15px]">
-            <strong>Satisfait ou remboursé.</strong> Si Fastattoo ne te convient pas, on te rembourse à 100 % pendant les {PRO_GUARANTEE_DAYS} premiers jours,
-            sans justification.
-          </p>
         </div>
         <ul className="mt-4 space-y-2 text-[15px]">
           {["Résiliable à tout moment", "Profil et portfolio mis en avant sur la carte", "Demandes, messages et agenda inclus", "Paiement sécurisé par Stripe"].map((t) => (
