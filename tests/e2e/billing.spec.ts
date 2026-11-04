@@ -9,7 +9,7 @@ test("inscription tatoueur : paiement obligatoire, forfait annuel à 179 € pro
   await expect(page).toHaveURL(/\/pro\/abonnement$/);
   await expect(page.getByRole("heading", { name: "Active ton profil pro" })).toBeVisible();
   await expect(page.getByRole("radio", { name: /Annuel/ })).toHaveAttribute("aria-checked", "true");
-  await expect(page.getByText("🎁 1 mois offert").first()).toBeVisible();
+  await expect(page.getByText("🎁 49 € d'économie").first()).toBeVisible();
   await page.getByRole("button", { name: "Payer 179 € pour 1 an" }).click();
   const sheet = page.getByRole("dialog", { name: "Paiement" });
   await expect(sheet.getByText("Mode démonstration")).toBeVisible();

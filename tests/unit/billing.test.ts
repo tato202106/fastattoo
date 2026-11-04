@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ANNUAL_PERK, annualPerkIsTrue, annualSavings, formatPrice, isPlanId, PLANS, renewalDate } from "@/lib/billing/plans";
+import { ANNUAL_PERK, annualPerkIsTrue, annualSavings, formatPrice, freeMonthsLabel, isPlanId, PLANS, renewalDate } from "@/lib/billing/plans";
 import { PRO_PRICE_ANNUAL, PRO_PRICE_MONTHLY, PRO_SIGNUP_URL, proSignupUrlFor } from "@/lib/pro-offer";
 
 describe("forfaits tatoueur", () => {
@@ -21,10 +21,11 @@ describe("forfaits tatoueur", () => {
     expect(formatPrice(s.perMonth)).toBe("14,92 €");
   });
 
-  it("« 1 mois offert » sur l'annuel : argument vrai (moins cher que 11 mois au mensuel)", () => {
-    expect(ANNUAL_PERK).toBe("1 mois offert");
+  it("argument de l'annuel : l'économie réelle par rapport au mensuel", () => {
+    expect(ANNUAL_PERK).toBe("49 € d'économie");
+    expect(ANNUAL_PERK).toBe(`${formatPrice(annualSavings().saved)} d'économie`);
     expect(annualPerkIsTrue()).toBe(true);
-    expect(PLANS.annual.amount).toBeLessThan(PLANS.monthly.amount * 11);
+    expect(freeMonthsLabel()).toBe("plus de 2 mois offerts");
   });
 
   it("date de renouvellement", () => {
