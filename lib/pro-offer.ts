@@ -12,7 +12,6 @@ export const PRO_PRICE_ANNUAL = 179;
  */
 export const PRO_ANNUAL_PERK = `${PRO_PRICE_MONTHLY * 12 - PRO_PRICE_ANNUAL} € d'économie`;
 
-
 /**
  * Lien du formulaire d'inscription (formulaire du site, ou un lien externe).
  * Tant qu'il est vide, le bouton affiche « Inscriptions bientôt ouvertes ».
