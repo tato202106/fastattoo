@@ -215,3 +215,4 @@ Limites connues :
 
 - **Adresse canonique de l'accueil** : `/` (le `canonical: "./"` du layout se résolvait en `/index` sur l'accueil, ce qui pouvait gêner son référencement). Les autres pages gardent la règle du layout.
 - **Statistiques de visite** : Vercel Web Analytics (`@vercel/analytics`, composant `<Analytics />` dans le layout, sans cookie). À activer une fois dans le tableau de bord Vercel (onglet Analytics).
+- **Guides pour les futurs tatoués** (`/guides`, contenu dans `lib/guides.ts`) : prix d'un tatouage, soins des premiers jours, zones et douleur, styles. Chaque guide cite ses sources (ARS, INC, justice.fr, service-public.fr…), rappelle de suivre les consignes du tatoueur, renvoie vers la carte et figure dans le sitemap. Liens depuis l'accueil (« Bien préparer ton tatouage »).
