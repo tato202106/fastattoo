@@ -11,6 +11,7 @@ import { Picture } from "@/components/ui/Picture";
 import { formatShortDay, relativeDay } from "@/lib/dates";
 import { useApp } from "@/lib/store/app";
 import { artAsset } from "@/lib/art/assets";
+import { type Flash, flashRequestDescription } from "@/lib/flashes";
 import { useHydrated } from "@/lib/store/hydration";
 import { TATTOO_SIZES, type TattooSize } from "@/lib/store/model";
 import { BODY_ZONES, STYLES, styleLabel, zoneLabel } from "@/lib/styles";
@@ -58,7 +59,7 @@ const draftKey = (slug: string) => `fastattoo-draft-${slug}`;
  * bouton « Continuer » dans la zone du pouce, progression « 6 / 8 ».
  * Le brouillon est conservé dans l'onglet (sessionStorage).
  */
-export function RequestWizard({ artist }: { artist: WizardArtist }) {
+export function RequestWizard({ artist, flash = null }: { artist: WizardArtist; flash?: Flash | null }) {
   const router = useRouter();
   const params = useSearchParams();
   const hydrated = useHydrated();
@@ -69,14 +70,16 @@ export function RequestWizard({ artist }: { artist: WizardArtist }) {
 
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<Draft>(() => ({
-    description: "",
-    styles: artist.styles.slice(0, 1),
+    description: flash ? flashRequestDescription(flash) : "",
+    styles: flash ? [flash.style] : artist.styles.slice(0, 1),
     zone: null,
-    size: null,
-    budget: null,
+    size: flash?.size ?? null,
+    // Flash : prix fixe annoncé par le tatoueur.
+    budget: flash ? [flash.price, flash.price] : null,
     dates: [],
     flexible: false,
-    inspirations: [],
+    // Le dessin du flash part avec la demande (images envoyées sur le site uniquement).
+    inspirations: flash && flash.image.base.startsWith("/media/u/") ? [flash.image] : [],
   }));
   const [uploading, setUploading] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -95,13 +98,14 @@ export function RequestWizard({ artist }: { artist: WizardArtist }) {
     try {
       const saved = sessionStorage.getItem(draftKey(artist.slug));
       // eslint-disable-next-line react-hooks/set-state-in-effect -- restauration unique du brouillon
-      if (saved) setDraft((d) => ({ ...d, ...(JSON.parse(saved) as Partial<Draft>) }));
+      // Demande d'un flash : on repart du flash choisi, pas d'un ancien brouillon.
+      if (saved && !flash) setDraft((d) => ({ ...d, ...(JSON.parse(saved) as Partial<Draft>) }));
     } catch {
       /* ignore */
     }
     const slot = params.get("creneau");
     if (slot && /^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}$/.test(slot)) setDraft((d) => ({ ...d, dates: [...new Set([...d.dates, slot.split("_")[0]!])] }));
-  }, [artist.slug, params]);
+  }, [artist.slug, params, flash]);
 
   useEffect(() => {
     try {
@@ -259,6 +263,20 @@ export function RequestWizard({ artist }: { artist: WizardArtist }) {
 
         {step === 1 && (
           <div className="mt-5">
+            {flash && (
+              <div className="mb-4 flex items-center gap-3 rounded-2xl bg-surface p-3 shadow-card">
+                <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-surface-2">
+                  <Picture image={flash.image} usage="list" fill sizes="64px" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-accent">Flash choisi</p>
+                  <p className="truncate font-semibold">{flash.title}</p>
+                  <p className="text-sm text-muted">
+                    {flash.price} €{flash.unique ? " · Pièce unique" : ""}
+                  </p>
+                </div>
+              </div>
+            )}
             <label htmlFor="desc" className="sr-only">
               Décris ton projet
             </label>
@@ -356,9 +374,15 @@ export function RequestWizard({ artist }: { artist: WizardArtist }) {
 
         {step === 5 && (
           <div className="mt-5">
-            <p className="mb-3 text-sm text-muted">
-              {artist.name} travaille à partir de <strong className="text-fg">{artist.priceFrom} €</strong>.
-            </p>
+            {flash && draft.budget?.[0] === flash.price && draft.budget[1] === flash.price ? (
+              <p className="mb-3 rounded-2xl bg-success/10 p-3 text-[15px]">
+                Prix fixe du flash : <strong>{flash.price} €</strong>. Continue, ou choisis une autre fourchette si tu veux le modifier.
+              </p>
+            ) : (
+              <p className="mb-3 text-sm text-muted">
+                {artist.name} travaille à partir de <strong className="text-fg">{artist.priceFrom} €</strong>.
+              </p>
+            )}
             <div className="space-y-2">
               {BUDGETS.map((b) => {
                 const selected = draft.budget?.[0] === b.value[0] && draft.budget[1] === b.value[1];
@@ -458,7 +482,7 @@ export function RequestWizard({ artist }: { artist: WizardArtist }) {
                 ["Style", draft.styles.map(styleLabel).join(", "), 2],
                 ["Emplacement", draft.zone ? zoneLabel(draft.zone) : "—", 3],
                 ["Taille", TATTOO_SIZES.find((s) => s.value === draft.size)?.label ?? "—", 4],
-                ["Budget", draft.budget ? `${draft.budget[0]} – ${draft.budget[1]} €` : "—", 5],
+                ["Budget", draft.budget ? (draft.budget[0] === draft.budget[1] ? `${draft.budget[0]} €` : `${draft.budget[0]} – ${draft.budget[1]} €`) : "—", 5],
                 ["Quand", draft.flexible || draft.dates.length === 0 ? "Flexible" : draft.dates.map((d) => formatShortDay(d)).join(", "), 6],
                 ["Inspirations", draft.inspirations.length ? `${draft.inspirations.length} photo(s)` : "Aucune", 7],
               ].map(([label, value, target]) => (

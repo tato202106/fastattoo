@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ArtistSpace } from "@/components/espace/ArtistSpace";
+import { listFlashes } from "@/lib/accounts/flashes-db";
 import { autoPublish, listPhotos, listSlots, recordActivity } from "@/lib/accounts/db";
 import { currentAccount } from "@/lib/accounts/session";
 import { hasPaidAccess } from "@/lib/billing/access";
@@ -26,12 +27,14 @@ export default async function ArtistSpacePage({ searchParams }: PageProps<"/espa
   const photos = await listPhotos(account.id).catch(() => []);
   const slots = await listSlots(account.id).catch(() => []);
   const inbox = await inboxFor(account.id).catch(() => []);
+  const flashes = await listFlashes(account.id).catch(() => []);
   const { bienvenue } = await searchParams;
   return (
     <main className="mx-auto max-w-xl px-4 pt-safe pb-nav lg:pt-6">
       <ArtistSpace
         initial={account}
         photos={photos}
+        flashes={flashes}
         slots={slots}
         paid={paid}
         welcome={bienvenue === "1"}

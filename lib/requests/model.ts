@@ -149,6 +149,7 @@ export function sizeLabel(size: TattooSize): string {
 }
 
 export function budgetLabel(min: number, max: number): string {
+  if (min === max) return `${min} € (prix fixe)`;
   if (max >= 1000) return `Plus de ${min} €`;
   if (min <= 50) return `Moins de ${max} €`;
   return `${min} – ${max} €`;

@@ -10,8 +10,10 @@ import type { Account } from "@/lib/accounts/db";
 import { artistSlugFor, missingForSubmission } from "@/lib/accounts/profile";
 import { PAYMENT_PATH } from "@/lib/billing/access";
 import type { PlanId } from "@/lib/billing/plans";
+import type { Flash } from "@/lib/flashes";
 import type { PortfolioItem, Slot } from "@/lib/types";
 import { AvailabilityManager } from "./AvailabilityManager";
+import { FlashesManager } from "./FlashesManager";
 import { PhotosManager } from "./PhotosManager";
 import { ProfileForm } from "./ProfileForm";
 import { ReviewsManager } from "./ReviewsManager";
@@ -20,6 +22,7 @@ import { ReviewsManager } from "./ReviewsManager";
 export function ArtistSpace({
   initial,
   photos,
+  flashes,
   slots,
   paid,
   welcome,
@@ -27,6 +30,7 @@ export function ArtistSpace({
 }: {
   initial: Account;
   photos: PortfolioItem[];
+  flashes: Flash[];
   slots: Slot[];
   paid: boolean;
   welcome: boolean;
@@ -124,6 +128,13 @@ export function ArtistSpace({
           Mes photos
         </h2>
         <PhotosManager initial={photos} styles={account.styles} published={account.status === "published"} />
+      </section>
+
+      <section aria-labelledby="flashs" className="scroll-mt-4 space-y-4">
+        <h2 id="flashs" className="font-display text-[24px] font-bold">
+          Mes flashs
+        </h2>
+        <FlashesManager initial={flashes} styles={account.styles} published={account.status === "published"} />
       </section>
 
       <section aria-labelledby="disponibilites" className="space-y-4">

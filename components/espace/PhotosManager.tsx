@@ -10,7 +10,7 @@ import type { BodyZone, PortfolioItem, StyleSlug } from "@/lib/types";
 const MAX_SIDE = 2000;
 
 /** Réduit une photo trop lourde dans le navigateur (envoi plus rapide, limite de taille des requêtes). */
-async function shrink(file: File): Promise<Blob> {
+export async function shrink(file: File): Promise<Blob> {
   if (file.size < 1_500_000) return file;
   try {
     const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
