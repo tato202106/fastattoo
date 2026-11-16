@@ -6,6 +6,7 @@
   "regions": ["cdg1"],
   "crons": [
     { "path": "/api/agenda/rappels", "schedule": "0 16 * * *" },
-    { "path": "/api/compte/inactivite", "schedule": "0 9 * * *" }
+    { "path": "/api/compte/inactivite", "schedule": "0 9 * * *" },
+    { "path": "/api/avis/demandes", "schedule": "0 17 * * *" }
   ]
 }

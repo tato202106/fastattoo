@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { AdminLogin, AdminPanel } from "@/components/espace/AdminPanel";
 import { adminConfigured, isAdmin } from "@/lib/accounts/admin-session";
 import { PaymentSetup } from "@/components/espace/PaymentSetup";
+import { AdminReviews } from "@/components/espace/AdminReviews";
 import { listAccounts } from "@/lib/accounts/db";
+import { listRecentReviews, type AdminReview } from "@/lib/accounts/reviews-db";
 import { billingDiagnostics } from "@/lib/billing/env";
 import { checkStripeSetup } from "@/lib/billing/stripe";
 
@@ -35,6 +37,10 @@ export default async function AdminPage() {
   } catch (e) {
     error = (e as Error).message;
   }
+  const reviews: AdminReview[] = await listRecentReviews().catch((e) => {
+    console.error("[admin] lecture des avis impossible :", e);
+    return [];
+  });
   const diag = billingDiagnostics();
   const check = diag.secretKey.ok ? await checkStripeSetup().catch(() => null) : null;
   return (
@@ -43,6 +49,7 @@ export default async function AdminPage() {
         <PaymentSetup diag={diag} check={check} />
       </div>
       <AdminPanel initial={accounts} error={error} />
+      <AdminReviews initial={reviews} />
     </main>
   );
 }

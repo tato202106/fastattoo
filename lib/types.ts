@@ -53,6 +53,8 @@ export interface Review {
   date: string; // YYYY-MM-DD
   text: string;
   style?: StyleSlug;
+  /** Réponse publique du tatoueur. */
+  reply?: string;
 }
 
 export interface Slot {
