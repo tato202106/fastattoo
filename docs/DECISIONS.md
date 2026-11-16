@@ -216,3 +216,10 @@ Limites connues :
 - **Adresse canonique de l'accueil** : `/` (le `canonical: "./"` du layout se résolvait en `/index` sur l'accueil, ce qui pouvait gêner son référencement). Les autres pages gardent la règle du layout.
 - **Statistiques de visite** : Vercel Web Analytics (`@vercel/analytics`, composant `<Analytics />` dans le layout, sans cookie). À activer une fois dans le tableau de bord Vercel (onglet Analytics).
 - **Guides pour les futurs tatoués** (`/guides`, contenu dans `lib/guides.ts`) : prix d'un tatouage, soins des premiers jours, zones et douleur, styles. Chaque guide cite ses sources (ARS, INC, justice.fr, service-public.fr…), rappelle de suivre les consignes du tatoueur, renvoie vers la carte et figure dans le sitemap. Liens depuis l'accueil (« Bien préparer ton tatouage »).
+
+## Kit de partage des tatoueurs
+
+- **But** : que chaque tatoueur ramène ses clients et ses abonnés sur son profil (visites, avis, référencement). Page `/espace-tatoueur/kit`, accessible par le bouton « Partager mon profil » de l'espace dès que le profil est en ligne.
+- **Contenu** : lien du profil (partage natif ou copie) ; **visuel de story** 1080 × 1920 généré à la demande (`/api/compte/kit/story`, `next/og`) avec la première photo du portfolio, le nom, le studio, la note et un QR code ; **affiche A4** à imprimer pour le studio (impression du navigateur, seule l'affiche sort) et QR code seul en SVG (`/api/compte/kit/qr`) ; textes prêts à copier (bio, légende de story, réponse à un client, demande d'avis).
+- **QR code** : générateur maison sans dépendance (`lib/qr.ts`, mode octets, correction M, versions 1 à 10), vérifié avec un vrai lecteur et testé.
+- **Mesure** : chaque support a son lien avec `utm_source` (`qr`, `story`, `bio`, `lien`, voir `lib/share-kit.ts`) pour voir dans Vercel Analytics ce qui ramène des visites. La fiche garde son adresse canonique, donc pas de doublon pour Google.

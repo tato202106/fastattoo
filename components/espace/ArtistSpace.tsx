@@ -68,6 +68,19 @@ export function ArtistSpace({
 
       <StatusCard account={account} paid={paid} onChange={setAccount} />
 
+      {account.status === "published" && (
+        <Link href="/espace-tatoueur/kit" className="tap flex items-center gap-4 rounded-2xl bg-fg p-4 text-bg shadow-card">
+          <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-fg">
+            <Icon name="share" size={24} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Partager mon profil</span>
+            <span className="block text-sm opacity-75">Story prête à publier, QR code à imprimer pour ton studio, textes pour ta bio.</span>
+          </span>
+          <Icon name="chevronRight" size={20} className="opacity-75" />
+        </Link>
+      )}
+
       <Link href="/espace-tatoueur/demandes" className="tap flex items-center gap-4 rounded-2xl bg-surface p-4 shadow-card">
         <span className="relative inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
           <Icon name="inbox" size={24} />
