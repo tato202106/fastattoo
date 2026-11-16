@@ -433,7 +433,7 @@ function EntryForm({
             <Field label="Téléphone" error={errors.clientPhone} optional>
               <input type="tel" value={d.clientPhone} onChange={(e) => set("clientPhone", e.target.value)} autoComplete="off" maxLength={30} className={INPUT} />
             </Field>
-            <Field label="E-mail" error={errors.clientEmail} hint="Ton client reçoit un rappel par e-mail la veille du rendez-vous." optional>
+            <Field label="E-mail" error={errors.clientEmail} hint="Ton client reçoit un rappel par e-mail la veille, puis une demande d'avis le lendemain." optional>
               <input
                 type="email"
                 inputMode="email"

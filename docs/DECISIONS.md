@@ -200,3 +200,13 @@ Limites connues :
 - **L'abonnement n'est jamais résilié à la place du tatoueur** : c'est son choix, les e-mails et l'espace lui rappellent comment le faire (portail Stripe).
 - **Lien « Je tatoue toujours »** : `/toujours-actif?t=…`, jeton signé (HMAC, `ACTIVITY_LINK_SECRET` ou à défaut `CRON_SECRET`), valable 30 jours, sans mot de passe. La confirmation passe par un bouton (POST) pour que l'aperçu automatique des liens par les messageries ne compte pas comme une réponse.
 - **Pause** (statut `paused`) : choisie par le tatoueur (« Mettre mon profil en pause » dans son espace) ou décidée faute d'activité. Le profil quitte la carte, photos et avis sont gardés. Une pause faute d'activité se lève dès que le tatoueur revient dans son espace ; une pause qu'il a choisie, seulement avec « Remettre mon profil en ligne ».
+
+## Avis des vrais clients
+
+- **Seuls de vrais clients notent** : un avis est lié à un rendez-vous de l'agenda du tatoueur (un seul avis par rendez-vous, `account_reviews.agenda_entry_id` unique). Pas de compte client : le client reçoit un **lien personnel signé** (HMAC, `ACTIVITY_LINK_SECRET` ou `CRON_SECRET`), valable 60 jours. Un tatoueur ne peut ni se noter lui-même ni être noté par un inconnu. Règles dans `lib/reviews.ts`, testées.
+- **Demande d'avis** : cron Vercel quotidien `/api/avis/demandes` (17 h UTC). Pour chaque rendez-vous des 7 derniers jours (jusqu'à hier, heure de Paris) avec l'e-mail du client, chez un tatoueur en ligne et abonné, un e-mail « Comment s'est passé ton tatouage avec … ? » part une seule fois (`agenda_entries.review_request_sent_at`).
+- **Page `/avis?t=…`** : note de 1 à 5 étoiles (obligatoire), commentaire facultatif (1 000 caractères), nom affiché pré-rempli « Prénom N. » (jamais le nom complet). Le tatoueur reçoit un e-mail à chaque nouvel avis.
+- **Affichage** : les avis non retirés sont copiés dans la table `reviews` du site (id `acc-rev-<id>`) et la moyenne dans `artists.rating` / `review_count`, à chaque avis, réponse ou modération, et à la publication du profil. La fiche, l'épingle de la carte (« ★ 4,8 ») et le classement par qualité les utilisent aussitôt (cache du dépôt : une minute).
+- **Réponse du tatoueur** : « Mes avis » dans l'espace tatoueur, une réponse publique par avis (600 caractères), modifiable ou supprimable, affichée sous l'avis (`reviews.reply`, colonne ajoutée automatiquement).
+- **Modération** : dans `/admin`, « Avis clients » liste les plus récents ; « Retirer du site » masque un avis insultant ou faux et recalcule la note (l'avis reste en base, réversible).
+- Le bouton « Laisser un avis » de l'espace client de démonstration reste une maquette locale.

@@ -14,6 +14,7 @@ import type { PortfolioItem, Slot } from "@/lib/types";
 import { AvailabilityManager } from "./AvailabilityManager";
 import { PhotosManager } from "./PhotosManager";
 import { ProfileForm } from "./ProfileForm";
+import { ReviewsManager } from "./ReviewsManager";
 
 /** Espace d'un tatoueur connecté : statut du profil, photos, profil modifiable, abonnement. */
 export function ArtistSpace({
@@ -93,10 +94,17 @@ export function ArtistSpace({
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-semibold">Mon agenda</span>
-          <span className="block text-sm text-muted">Tes rendez-vous, tes congés et un rappel e-mail à tes clients la veille.</span>
+          <span className="block text-sm text-muted">Tes rendez-vous, un rappel e-mail à tes clients la veille et une demande d&apos;avis le lendemain.</span>
         </span>
         <Icon name="chevronRight" size={20} className="text-muted" />
       </Link>
+
+      <section aria-labelledby="avis" className="scroll-mt-4 space-y-4">
+        <h2 id="avis" className="font-display text-[24px] font-bold">
+          Mes avis
+        </h2>
+        <ReviewsManager />
+      </section>
 
       <section aria-labelledby="photos" className="space-y-4">
         <h2 id="photos" className="font-display text-[24px] font-bold">

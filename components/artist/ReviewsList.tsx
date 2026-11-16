@@ -34,7 +34,13 @@ export function ReviewsList({ artistId, reviews }: { artistId: string; reviews: 
               </div>
               <Stars value={r.rating} />
             </div>
-            <p className="mt-2 text-[15px] leading-relaxed">{r.text}</p>
+            {r.text && <p className="mt-2 text-[15px] leading-relaxed whitespace-pre-line">{r.text}</p>}
+            {r.reply && (
+              <div className="mt-3 rounded-xl bg-surface-2 p-3">
+                <p className="text-xs font-semibold text-muted">Réponse du tatoueur</p>
+                <p className="mt-1 text-sm leading-relaxed whitespace-pre-line">{r.reply}</p>
+              </div>
+            )}
           </li>
         ))}
       </ul>

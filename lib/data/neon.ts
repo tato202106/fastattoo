@@ -24,7 +24,8 @@ async function loadArtists(): Promise<Artist[]> {
   const [artistRows, portfolioRows, reviewRows, slotRows] = (await Promise.all([
     sql`SELECT * FROM artists ORDER BY id`,
     sql`SELECT * FROM portfolio_items ORDER BY artist_id, position`,
-    sql`SELECT id, artist_id, author, rating, to_char(date, 'YYYY-MM-DD') AS date, text, style
+    // reply : réponse du tatoueur (colonne ajoutée au premier avis réel, lue sans erreur si elle manque encore).
+    sql`SELECT id, artist_id, author, rating, to_char(date, 'YYYY-MM-DD') AS date, text, style, to_jsonb(reviews) ->> 'reply' AS reply
         FROM reviews ORDER BY date DESC`,
     sql`SELECT artist_id, to_char(date, 'YYYY-MM-DD') AS date, to_char(time, 'HH24:MI') AS time
         FROM slots WHERE date >= CURRENT_DATE ORDER BY date, time`,
@@ -71,6 +72,7 @@ async function loadArtists(): Promise<Artist[]> {
       date: r.date,
       text: r.text,
       ...(r.style ? { style: r.style } : {}),
+      ...(r.reply ? { reply: r.reply } : {}),
     })),
     nextSlots: (slots.get(a.id) ?? []).map((s) => ({ date: s.date, time: s.time })),
     ...(a.instagram ? { instagram: a.instagram } : {}),

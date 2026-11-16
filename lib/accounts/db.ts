@@ -478,6 +478,13 @@ async function upsertArtist(a: Account): Promise<string> {
       avatar = EXCLUDED.avatar, cover = EXCLUDED.cover, instagram = EXCLUDED.instagram, opening_hours = EXCLUDED.opening_hours`;
   await syncPortfolio(a.id);
   await syncSlots(a.id);
+  // Avis des clients et note (la ligne `artists` vient d'être créée avec 0 avis).
+  try {
+    const { syncSiteReviews } = await import("./reviews-db");
+    await syncSiteReviews(a.id);
+  } catch (e) {
+    console.error(`[avis] copie des avis du compte ${a.id} impossible :`, e);
+  }
   return row.slug;
 }
 
@@ -500,6 +507,7 @@ export async function unpublishAccount(id: number, status: "hidden" | "draft" = 
   const sql = connect();
   await sql`DELETE FROM portfolio_items WHERE artist_id = ${artistIdFor(id)}`;
   await sql`DELETE FROM slots WHERE artist_id = ${artistIdFor(id)}`;
+  await sql`DELETE FROM reviews WHERE artist_id = ${artistIdFor(id)}`;
   await sql`DELETE FROM artists WHERE id = ${artistIdFor(id)}`;
   await sql`UPDATE artist_accounts SET profile_status = ${status}, artist_id = NULL, paused_reason = NULL, updated_at = now() WHERE id = ${id}`;
 }
@@ -515,6 +523,7 @@ export async function pauseAccount(id: number, reason: PauseReason): Promise<Acc
   const sql = connect();
   await sql`DELETE FROM portfolio_items WHERE artist_id = ${artistIdFor(id)}`;
   await sql`DELETE FROM slots WHERE artist_id = ${artistIdFor(id)}`;
+  await sql`DELETE FROM reviews WHERE artist_id = ${artistIdFor(id)}`;
   await sql`DELETE FROM artists WHERE id = ${artistIdFor(id)}`;
   await sql`UPDATE artist_accounts SET profile_status = 'paused', paused_reason = ${reason}, artist_id = NULL, updated_at = now() WHERE id = ${id}`;
   return getAccount(id);
