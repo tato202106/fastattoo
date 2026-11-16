@@ -6,6 +6,9 @@ import { HomeSearch } from "@/components/home/HomeSearch";
 import { NearbyArtists } from "@/components/home/NearbyArtists";
 import { StyleCarousel } from "@/components/home/StyleCarousel";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Icon } from "@/components/ui/Icon";
+import { GUIDES } from "@/lib/guides";
 import { artists } from "@/lib/data";
 
 // Adresse canonique de l'accueil : la racine (« ./ » du layout donnait /index).
@@ -32,6 +35,26 @@ export default async function HomePage() {
         </section>
         <InstallBanner />
         <NearbyArtists initial={featured} />
+        <section aria-labelledby="guides-title">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 id="guides-title" className="text-xl font-semibold">
+              Bien préparer ton tatouage
+            </h2>
+            <Link href="/guides" className="text-sm font-medium underline underline-offset-4">
+              Tous les guides
+            </Link>
+          </div>
+          <ul className="grid gap-3 lg:grid-cols-2">
+            {GUIDES.map((g) => (
+              <li key={g.slug}>
+                <Link href={`/guides/${g.slug}`} className="tap flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-card">
+                  <span className="min-w-0 flex-1 text-[15px] font-semibold">{g.title}</span>
+                  <Icon name="chevronRight" size={18} className="shrink-0 text-muted" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
         <ArtistPromo />
       </div>
     </main>
