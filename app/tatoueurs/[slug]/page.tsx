@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DemoBadge, SponsorBadge } from "@/components/artist/ArtistCard";
 import { FavoriteButton } from "@/components/artist/FavoriteButton";
+import { FlashSection } from "@/components/artist/FlashSection";
 import { MiniMap } from "@/components/artist/MiniMap";
 import { PortfolioGallery } from "@/components/artist/PortfolioGallery";
 import { ProfileTopBar } from "@/components/artist/ProfileTopBar";
@@ -17,6 +18,7 @@ import { artists } from "@/lib/data";
 import { formatTime, relativeDay } from "@/lib/dates";
 import { toCard } from "@/lib/search/engine";
 import { groupOpeningHours } from "@/lib/accounts/availability";
+import { demoFlashes } from "@/lib/flashes";
 import { isDemoArtist, isNewArtist, priceFromLabel } from "@/lib/showcase";
 import { styleLabel } from "@/lib/styles";
 
@@ -233,6 +235,7 @@ export default async function ArtistPage({ params }: PageProps<"/tatoueurs/[slug
           Portfolio {a.portfolio.length > 0 && <span className="text-sm font-normal text-muted">{a.portfolio.length} tatouages</span>}
         </h2>
         <PortfolioGallery artistId={a.id} items={a.portfolio} />
+        <FlashSection artistId={a.id} requestHref={requestHref} initial={demo ? demoFlashes(a) : []} live={!demo} />
       </section>
 
       <div className="mt-6 px-4 lg:col-start-2 lg:row-start-2 lg:px-0">{details}</div>

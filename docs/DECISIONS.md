@@ -223,3 +223,11 @@ Limites connues :
 - **Contenu** : lien du profil (partage natif ou copie) ; **visuel de story** 1080 × 1920 généré à la demande (`/api/compte/kit/story`, `next/og`) avec la première photo du portfolio, le nom, le studio, la note et un QR code ; **affiche A4** à imprimer pour le studio (impression du navigateur, seule l'affiche sort) et QR code seul en SVG (`/api/compte/kit/qr`) ; textes prêts à copier (bio, légende de story, réponse à un client, demande d'avis).
 - **QR code** : générateur maison sans dépendance (`lib/qr.ts`, mode octets, correction M, versions 1 à 10), vérifié avec un vrai lecteur et testé.
 - **Mesure** : chaque support a son lien avec `utm_source` (`qr`, `story`, `bio`, `lien`, voir `lib/share-kit.ts`) pour voir dans Vercel Analytics ce qui ramène des visites. La fiche garde son adresse canonique, donc pas de doublon pour Google.
+
+## Flashs
+
+- **Flash** : dessin prêt à tatouer, à prix fixe (règles dans `lib/flashes.ts`, testées). Le tatoueur les ajoute dans « Mes flashs » de son espace : dessin (envoyé comme une photo), nom, prix (20 à 3 000 €), taille (petit, moyen, grand), style, pièce unique ou non. 40 flashs maximum.
+- **Statuts** : Disponible → Réservé (un client l'a pris) → Déjà tatoué (caché du profil, utile pour les pièces uniques). C'est le tatoueur qui les change, rien n'est automatique.
+- **Profil public** : section « Flashs disponibles » sous le portfolio (disponibles d'abord, réservés grisés). Lus à l'ouverture par `/api/flashs?artiste=acc-N` (table `account_flashes`, profil en ligne seulement) pour que les statuts soient toujours à jour malgré le cache de la page.
+- **« Je le veux »** : ouvre la demande de projet (`/tatoueurs/<slug>/demande?flash=<id>`) pré-remplie : texte « Je voudrais ton flash … », style, taille, prix fixe comme budget (« 120 € (prix fixe) ») et le dessin en inspiration. Un flash réservé ou déjà tatoué ne peut plus être demandé.
+- **Profils d'exemple** : 4 flashs d'exemple générés (dessins de démo), pour montrer la fonctionnalité.
