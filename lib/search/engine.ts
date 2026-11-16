@@ -9,6 +9,7 @@ import { bboxCenter, haversineKm, inBBox } from "../geo";
 import { isSponsorActive } from "../referral";
 import type { Artist, ArtistCard, LatLng, SearchQuery, SearchResponse } from "../types";
 import { nameScore, parseQuery } from "./parse";
+import { isLowRated, qualityScore } from "./quality";
 
 export const MAX_MARKERS = 200;
 export const MAX_PAGE_SIZE = 50;
@@ -36,13 +37,6 @@ export function toCard(a: Artist, distanceKm: number | null, today = todayISO())
 }
 
 const AVAILABILITY_DAYS = { today: 0, week: 6, month: 30 } as const;
-
-/** Score de popularité : note pondérée par le nombre d'avis (bayésien simple). */
-function popularity(a: Artist): number {
-  const prior = 4.5;
-  const weight = 20;
-  return (a.rating * a.reviewCount + prior * weight) / (a.reviewCount + weight);
-}
 
 export function searchArtists(artists: Artist[], query: SearchQuery, today = todayISO()): SearchResponse {
   const parsed = parseQuery(query.q ?? "", artists.flatMap((a) => [a.name, a.studio]));
@@ -80,14 +74,24 @@ export function searchArtists(artists: Artist[], query: SearchQuery, today = tod
     scored.push({ artist: a, distance: distanceRef ? haversineKm(distanceRef, p) : null, score });
   }
 
+  // Classement : pertinence du texte, puis les avis clients (jamais le prix).
+  // La distance ne départage que des tatoueurs de qualité équivalente : la zone
+  // (rayon ou carte) limite déjà les résultats aux tatoueurs proches.
   scored.sort((x, y) => {
     if (x.score !== y.score) return y.score - x.score;
+    // Note basse confirmée par les clients : après tous les autres, parrain ou non.
+    const lx = isLowRated(x.artist) ? 1 : 0;
+    const ly = isLowRated(y.artist) ? 1 : 0;
+    if (lx !== ly) return lx - ly;
     // Parrains actifs mis en avant (à pertinence égale).
     const sx = isSponsorActive(x.artist.sponsorUntil, today) ? 1 : 0;
     const sy = isSponsorActive(y.artist.sponsorUntil, today) ? 1 : 0;
     if (sx !== sy) return sy - sx;
-    if (x.distance != null && y.distance != null && area) return x.distance - y.distance;
-    return popularity(y.artist) - popularity(x.artist);
+    const qx = Math.round(qualityScore(x.artist) * 100);
+    const qy = Math.round(qualityScore(y.artist) * 100);
+    if (qx !== qy) return qy - qx;
+    if (x.distance != null && y.distance != null) return x.distance - y.distance;
+    return y.artist.reviewCount - x.artist.reviewCount;
   });
 
   const pageSize = Math.min(Math.max(query.pageSize, 0), MAX_PAGE_SIZE);

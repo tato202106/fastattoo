@@ -17,9 +17,10 @@ export type ArtistTitle = (typeof ARTIST_TITLES)[number];
  * Statut du profil : brouillon → publié sur le site dès que l'abonnement est
  * actif. « submitted » : ancien envoi pour validation manuelle (comptes
  * existants) ; « hidden » : retiré du site par l'équipe (modération), il n'est
- * plus republié automatiquement.
+ * plus republié automatiquement ; « paused » : en pause, choisie par le tatoueur
+ * ou faute d'activité (voir lib/accounts/inactivity.ts), hors de la carte.
  */
-export type ProfileStatus = "draft" | "submitted" | "published" | "hidden";
+export type ProfileStatus = "draft" | "submitted" | "published" | "hidden" | "paused";
 
 /** Statuts d'abonnement Stripe terminés : le profil quitte la carte. */
 const ENDED_SUBSCRIPTION = new Set(["canceled", "unpaid", "incomplete_expired", "paused"]);
@@ -37,7 +38,7 @@ export function autoPublishDecision(a: { status: ProfileStatus; paid: boolean; l
   | "publish"
   | "needs-location"
   | "skip" {
-  if (!a.paid || a.status === "published" || a.status === "hidden") return "skip";
+  if (!a.paid || a.status === "published" || a.status === "hidden" || a.status === "paused") return "skip";
   return a.lat == null || a.lng == null ? "needs-location" : "publish";
 }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getSeedArtists } from "@/lib/data/seed";
 import { searchArtists } from "@/lib/search/engine";
+import { qualityScore } from "@/lib/search/quality";
 import { DEFAULT_FILTERS, filtersFromParams, filtersToParams } from "@/lib/search/filters";
 import { searchQueryFromParams } from "@/lib/search/query-params";
 import type { SearchQuery } from "@/lib/types";
@@ -22,15 +23,15 @@ describe("données de démo", () => {
 });
 
 describe("searchArtists", () => {
-  it("« Fine Line Nantes » → uniquement des tatoueurs fine line autour de Nantes, triés par distance", () => {
+  it("« Fine Line Nantes » → uniquement des tatoueurs fine line autour de Nantes, les mieux notés d'abord", () => {
     const r = searchArtists(artists, base({ q: "Fine Line Nantes" }));
     expect(r.total).toBeGreaterThan(0);
     for (const c of r.markers) {
       expect(c.city).toBe("Nantes");
       expect(c.styles).toContain("fine-line");
     }
-    const d = r.items.map((c) => c.distanceKm!);
-    expect([...d].sort((a, b) => a - b)).toEqual(d);
+    const q = r.items.map((c) => Math.round(qualityScore(c) * 100));
+    expect([...q].sort((a, b) => b - a)).toEqual(q);
   });
 
   it("« Léa Ink » → Léa Ink en premier", () => {

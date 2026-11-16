@@ -181,3 +181,22 @@ Limites connues :
 - **Vues** : « Jour » (barre des 7 jours de la semaine) et « Semaine », navigation de semaine en semaine.
 - **Fuseau** : jours et heures stockés en texte (heure locale du studio). « Aujourd'hui » et « demain » sont calculés dans le fuseau Europe/Paris, identique à Bruxelles.
 - **Rappel e-mail la veille** : un cron Vercel (`vercel.json`, chaque jour à 16 h UTC, soit 17 h ou 18 h à Paris) appelle `/api/agenda/rappels`, protégé par `CRON_SECRET`. Un e-mail part via Resend à chaque client qui a rendez-vous le lendemain et dont l'e-mail est renseigné. La réponse du client arrive chez le tatoueur (`reply-to`). Un rappel n'est envoyé qu'une fois par rendez-vous (`reminder_sent_at`), et à nouveau si la date, l'heure ou l'e-mail change. Seuls les tatoueurs abonnés en profitent.
+
+## Classement par la qualité, jamais par le prix
+
+- **Le prix n'entre jamais dans le classement** : un tatoueur ne gagne aucune place en cassant ses prix. Ordre des résultats (`lib/search/engine.ts`, règles dans `lib/search/quality.ts`, testées) : pertinence du texte tapé → note basse confirmée en dernier → parrains actifs → **score d'avis** → distance (seulement entre tatoueurs de qualité équivalente, la zone limitant déjà aux tatoueurs proches).
+- **Score d'avis** : moyenne bayésienne (référence 4,5★, poids 20 avis). Un 5★ sur 2 avis ne passe pas devant un 4,8★ sur 60 avis ; un nouveau tatoueur (0 avis) part de 4,5 : ni enterré ni favorisé.
+- **Note basse confirmée** (au moins 5 avis et moyenne sous 3,5★) : le profil passe après tous les autres, même parrain. Dans `/admin`, ces profils sont signalés « ⚠️ Note basse » et listés en premier (« à surveiller »).
+- **Carte** : les épingles affichent la note (« ★ 4,8 »), « Nouveau » sans avis, et le style pour un profil d'exemple. Plus jamais le prix.
+- **Filtres** : « Note des clients » en premier ; le prix devient « Budget », en dernier, facultatif.
+- La mise en avant de l'accueil (`featured`) suit les mêmes règles.
+
+## Tatoueurs qui arrêtent leur activité
+
+- **Suivi d'activité** : chaque visite de l'espace tatoueur (ou de l'agenda) met à jour `artist_accounts.last_active_at` (au plus une fois par heure). Les comptes existants partent de leur dernière connexion connue (`artist_sessions`).
+- **Contrôle quotidien** (cron Vercel `/api/compte/inactivite`, 9 h UTC, `CRON_SECRET`) — règles dans `lib/accounts/inactivity.ts`, testées :
+  - profil en ligne, abonné, sans visite depuis **45 jours** → e-mail « Tu tatoues toujours ? » avec trois choix : « Je tatoue toujours » (un clic), mettre son profil en pause, ou résilier son abonnement ;
+  - toujours rien **15 jours** après → profil **mis en pause** (hors de la carte), e-mail au tatoueur et récapitulatif à l'équipe (`SIGNUP_NOTIFY_EMAIL`).
+- **L'abonnement n'est jamais résilié à la place du tatoueur** : c'est son choix, les e-mails et l'espace lui rappellent comment le faire (portail Stripe).
+- **Lien « Je tatoue toujours »** : `/toujours-actif?t=…`, jeton signé (HMAC, `ACTIVITY_LINK_SECRET` ou à défaut `CRON_SECRET`), valable 30 jours, sans mot de passe. La confirmation passe par un bouton (POST) pour que l'aperçu automatique des liens par les messageries ne compte pas comme une réponse.
+- **Pause** (statut `paused`) : choisie par le tatoueur (« Mettre mon profil en pause » dans son espace) ou décidée faute d'activité. Le profil quitte la carte, photos et avis sont gardés. Une pause faute d'activité se lève dès que le tatoueur revient dans son espace ; une pause qu'il a choisie, seulement avec « Remettre mon profil en ligne ».

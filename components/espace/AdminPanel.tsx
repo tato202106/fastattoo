@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import type { Account } from "@/lib/accounts/db";
 import { artistSlugFor } from "@/lib/accounts/profile";
+import { isLowRated, LOW_RATING_THRESHOLD } from "@/lib/search/quality";
 import { styleLabel } from "@/lib/styles";
 
 const STATUS: Record<Account["status"], { label: string; className: string }> = {
@@ -14,6 +15,7 @@ const STATUS: Record<Account["status"], { label: string; className: string }> = 
   published: { label: "En ligne", className: "bg-success/15 text-success" },
   draft: { label: "Brouillon", className: "bg-surface-2 text-muted" },
   hidden: { label: "Retiré par l'équipe", className: "bg-surface-2 text-muted" },
+  paused: { label: "En pause", className: "bg-surface-2 text-muted" },
 };
 
 const SUB: Record<string, string> = {
@@ -69,6 +71,10 @@ export function AdminPanel({ initial, error }: { initial: Account[]; error: stri
   const [busy, setBusy] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(error);
   const pending = accounts.filter((a) => a.status === "submitted").length;
+  // Notes basses confirmées par les clients : à surveiller, affichées en premier.
+  const lowRated = (a: Account) => a.status === "published" && a.reviewCount != null && isLowRated({ rating: a.rating ?? 0, reviewCount: a.reviewCount });
+  const flagged = accounts.filter(lowRated).length;
+  const sorted = [...accounts].sort((a, b) => Number(lowRated(b)) - Number(lowRated(a)));
 
   async function act(id: number, action: "publish" | "unpublish") {
     if (action === "unpublish" && !window.confirm("Retirer ce profil du site ?")) return;
@@ -98,7 +104,8 @@ export function AdminPanel({ initial, error }: { initial: Account[]; error: stri
         <div>
           <h1 className="font-display text-[28px] leading-tight font-bold">Validation des profils</h1>
           <p className="text-sm text-muted">
-            {pending} à valider · {accounts.length} compte{accounts.length > 1 ? "s" : ""}
+            {pending} à valider · {flagged > 0 && `${flagged} à surveiller · `}
+            {accounts.length} compte{accounts.length > 1 ? "s" : ""}
           </p>
         </div>
         <button type="button" onClick={logout} className="tap inline-flex h-11 items-center rounded-full border border-border px-4 text-sm font-medium">
@@ -108,10 +115,20 @@ export function AdminPanel({ initial, error }: { initial: Account[]; error: stri
       {message && <p role="status" className="rounded-xl bg-surface-2 p-3 text-sm">{message}</p>}
       {accounts.length === 0 && <p className="text-muted">Aucun compte tatoueur pour l&apos;instant.</p>}
       <ul className="space-y-4">
-        {accounts.map((a) => (
+        {sorted.map((a) => (
           <li key={a.id} className="rounded-2xl bg-surface p-4 shadow-card">
             <div className="flex flex-wrap items-center gap-2">
               <span className={clsx("rounded-full px-2.5 py-0.5 text-xs font-semibold", STATUS[a.status].className)}>{STATUS[a.status].label}</span>
+              {lowRated(a) && (
+                <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-fg" title={`Moyenne sous ${String(LOW_RATING_THRESHOLD).replace(".", ",")}★ : profil classé après les autres`}>
+                  ⚠️ Note basse · ★ {(a.rating ?? 0).toFixed(1).replace(".", ",")} ({a.reviewCount} avis)
+                </span>
+              )}
+              {a.status === "published" && !lowRated(a) && a.reviewCount ? (
+                <span className="text-xs text-muted">
+                  ★ {(a.rating ?? 0).toFixed(1).replace(".", ",")} · {a.reviewCount} avis
+                </span>
+              ) : null}
               <span className="text-xs text-muted">{a.subscriptionStatus ? (SUB[a.subscriptionStatus] ?? a.subscriptionStatus) : "Pas d'abonnement"}</span>
             </div>
             <p className="mt-2 text-lg font-semibold">

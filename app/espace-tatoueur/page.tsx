@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ArtistSpace } from "@/components/espace/ArtistSpace";
-import { autoPublish, listPhotos, listSlots } from "@/lib/accounts/db";
+import { autoPublish, listPhotos, listSlots, recordActivity } from "@/lib/accounts/db";
 import { currentAccount } from "@/lib/accounts/session";
 import { hasPaidAccess } from "@/lib/billing/access";
 import { inboxFor } from "@/lib/requests/db";
@@ -12,9 +12,11 @@ export const dynamic = "force-dynamic";
 export default async function ArtistSpacePage({ searchParams }: PageProps<"/espace-tatoueur">) {
   let account = await currentAccount();
   if (!account) redirect("/espace-tatoueur/connexion");
+  // Le tatoueur est actif : un profil mis en pause faute d'activité revient en ligne.
+  account = await recordActivity(account);
   const paid = hasPaidAccess(account.subscriptionStatus);
   // Abonné mais pas encore en ligne (paiement fait avant la publication automatique, adresse à géocoder…) : on publie maintenant.
-  if (paid && account.status !== "published" && account.status !== "hidden") {
+  if (paid && account.status !== "published" && account.status !== "hidden" && account.status !== "paused") {
     const result = await autoPublish(account.id).catch((e) => {
       console.error("[compte] publication automatique impossible :", e);
       return null;
