@@ -210,3 +210,8 @@ Limites connues :
 - **Réponse du tatoueur** : « Mes avis » dans l'espace tatoueur, une réponse publique par avis (600 caractères), modifiable ou supprimable, affichée sous l'avis (`reviews.reply`, colonne ajoutée automatiquement).
 - **Modération** : dans `/admin`, « Avis clients » liste les plus récents ; « Retirer du site » masque un avis insultant ou faux et recalcule la note (l'avis reste en base, réversible).
 - Le bouton « Laisser un avis » de l'espace client de démonstration reste une maquette locale.
+
+## Référencement et statistiques
+
+- **Adresse canonique de l'accueil** : `/` (le `canonical: "./"` du layout se résolvait en `/index` sur l'accueil, ce qui pouvait gêner son référencement). Les autres pages gardent la règle du layout.
+- **Statistiques de visite** : Vercel Web Analytics (`@vercel/analytics`, composant `<Analytics />` dans le layout, sans cookie). À activer une fois dans le tableau de bord Vercel (onglet Analytics).

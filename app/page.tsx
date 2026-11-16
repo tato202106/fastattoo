@@ -5,7 +5,11 @@ import { HomeHero } from "@/components/home/HomeHero";
 import { HomeSearch } from "@/components/home/HomeSearch";
 import { NearbyArtists } from "@/components/home/NearbyArtists";
 import { StyleCarousel } from "@/components/home/StyleCarousel";
+import type { Metadata } from "next";
 import { artists } from "@/lib/data";
+
+// Adresse canonique de l'accueil : la racine (« ./ » du layout donnait /index).
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export const revalidate = 3600;
 

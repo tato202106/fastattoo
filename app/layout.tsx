@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { AppRuntime } from "@/components/layout/AppRuntime";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { DesktopNav } from "@/components/layout/DesktopNav";
@@ -42,6 +43,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div id="contenu">{children}</div>
         <BottomNav />
         <AppRuntime />
+        {/* Statistiques de visite Vercel (sans cookie) : à activer dans Vercel → Analytics. */}
+        <Analytics />
       </body>
     </html>
   );
