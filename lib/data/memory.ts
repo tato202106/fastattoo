@@ -1,6 +1,7 @@
 import { CITIES } from "../cities";
 import { isSponsorActive } from "../referral";
 import { searchArtists, toCard } from "../search/engine";
+import { isLowRated, qualityScore } from "../search/quality";
 import { STYLES } from "../styles";
 import { normalize } from "../text";
 import type { Artist, SearchQuery, Suggestion } from "../types";
@@ -35,8 +36,9 @@ export class MemoryArtistRepository implements ArtistRepository {
     return [...this.source()]
       .sort(
         (a, b) =>
+          Number(isLowRated(a)) - Number(isLowRated(b)) ||
           Number(isSponsorActive(b.sponsorUntil)) - Number(isSponsorActive(a.sponsorUntil)) ||
-          b.rating * Math.log(b.reviewCount + 1) - a.rating * Math.log(a.reviewCount + 1),
+          qualityScore(b) - qualityScore(a),
       )
       .slice(0, limit)
       .map((a) => toCard(a, null));

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Agenda } from "@/components/espace/Agenda";
+import { recordActivity } from "@/lib/accounts/db";
 import { currentAccount } from "@/lib/accounts/session";
 import { dateInTimeZone } from "@/lib/agenda";
 
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function AgendaPage() {
   const account = await currentAccount();
   if (!account) redirect("/espace-tatoueur/connexion");
+  await recordActivity(account);
   return (
     <main className="mx-auto max-w-xl px-4 pt-safe pb-nav lg:pt-6">
       <Agenda today={dateInTimeZone(new Date())} />

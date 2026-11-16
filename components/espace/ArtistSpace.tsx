@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SubscribedView } from "@/components/billing/SignupConfirmation";
-import { buttonClass } from "@/components/ui/Button";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import type { Account } from "@/lib/accounts/db";
 import { artistSlugFor, missingForSubmission } from "@/lib/accounts/profile";
@@ -65,7 +65,7 @@ export function ArtistSpace({
         </div>
       )}
 
-      <StatusCard account={account} paid={paid} />
+      <StatusCard account={account} paid={paid} onChange={setAccount} />
 
       <Link href="/espace-tatoueur/demandes" className="tap flex items-center gap-4 rounded-2xl bg-surface p-4 shadow-card">
         <span className="relative inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
@@ -129,8 +129,31 @@ export function ArtistSpace({
   );
 }
 
-function StatusCard({ account, paid }: { account: Account; paid: boolean }) {
+/** Mettre le profil en pause ou le remettre en ligne (l'abonnement n'est pas touché). */
+function usePause(onChange: (a: Account) => void) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function toggle(pause: boolean) {
+    if (pause && !window.confirm("Mettre ton profil en pause ? Il n'apparaîtra plus sur la carte tant que tu ne l'auras pas remis en ligne.")) return;
+    setBusy(true);
+    setError(null);
+    const res = await fetch("/api/compte/pause", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pause }) }).catch(() => null);
+    const data = (await res?.json().catch(() => ({}))) as { account?: Account; error?: string } | undefined;
+    if (res?.ok && data?.account) onChange(data.account);
+    else setError(data?.error ?? "Action impossible. Réessaie dans un instant.");
+    setBusy(false);
+  }
+  return { busy, error, toggle };
+}
+
+function StatusCard({ account, paid, onChange }: { account: Account; paid: boolean; onChange: (a: Account) => void }) {
   const tips = missingForSubmission(account).filter((m) => !m.startsWith("ta ville"));
+  const pause = usePause(onChange);
+  const pauseError = pause.error && (
+    <p role="alert" className="mt-2 rounded-xl bg-accent-soft p-3 text-sm text-accent">
+      {pause.error}
+    </p>
+  );
 
   if (account.status === "published") {
     return (
@@ -149,6 +172,37 @@ function StatusCard({ account, paid }: { account: Account; paid: boolean }) {
         <Link href={`/tatoueurs/${artistSlugFor(account.id, account.name, account.city)}`} className={buttonClass("outline", "md", "mt-3 w-full")}>
           Voir mon profil public
         </Link>
+        <button
+          type="button"
+          disabled={pause.busy}
+          onClick={() => pause.toggle(true)}
+          className="tap mt-2 inline-flex h-11 w-full items-center justify-center rounded-xl text-sm font-medium text-muted underline underline-offset-4"
+        >
+          {pause.busy ? "Un instant…" : "Mettre mon profil en pause (congés, arrêt…)"}
+        </button>
+        {pauseError}
+      </section>
+    );
+  }
+  if (account.status === "paused") {
+    return (
+      <section className="rounded-2xl bg-surface p-4 shadow-card">
+        <p className="flex items-center gap-2 font-semibold">
+          <Icon name="clock" size={20} /> Ton profil est en pause
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          {account.pausedReason === "inactivity"
+            ? "Sans nouvelles de ta part, on l'a retiré de la carte pour que les clients ne tombent pas sur un profil qui ne répond plus."
+            : "Il n'apparaît plus sur la carte ni dans la recherche."}{" "}
+          Tes photos et tes avis sont gardés.
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          Ton abonnement continue pendant la pause. Tu as arrêté ton activité ? Résilie-le dans « Mon abonnement » ci-dessous.
+        </p>
+        <Button size="lg" className="mt-3 w-full" disabled={pause.busy || !paid} onClick={() => pause.toggle(false)}>
+          {pause.busy ? "Un instant…" : "Remettre mon profil en ligne"}
+        </Button>
+        {pauseError}
       </section>
     );
   }

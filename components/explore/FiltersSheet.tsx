@@ -93,6 +93,16 @@ export function FiltersSheet({
         </div>
       }
     >
+      <Section title="Note des clients" hint="Les tatoueurs les mieux notés apparaissent en premier">
+        <div className="flex flex-wrap gap-2">
+          {RATING_OPTIONS.map((r) => (
+            <Chip key={r} selected={draft.ratingMin === r} onClick={() => set("ratingMin", draft.ratingMin === r ? null : r)}>
+              <Icon name="star" size={15} className="text-star" />
+              {String(r).replace(".", ",")}+
+            </Chip>
+          ))}
+        </div>
+      </Section>
       <Section title="Style" hint="Plusieurs choix possibles">
         <div className="flex flex-wrap gap-2">
           {STYLES.map((s) => {
@@ -128,7 +138,17 @@ export function FiltersSheet({
         </div>
       </Section>
 
-      <Section title="Prix" hint="Tarif de départ du tatoueur">
+      <Section title="Disponibilité">
+        <div className="flex flex-wrap gap-2">
+          {AVAILABILITY_OPTIONS.map((o) => (
+            <Chip key={o.value} selected={draft.availability === o.value} onClick={() => set("availability", draft.availability === o.value ? null : o.value)}>
+              {o.label}
+            </Chip>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Budget" hint="Facultatif : le prix n'influence jamais le classement">
         <div className="grid grid-cols-2 gap-3">
           {(
             [
@@ -156,26 +176,6 @@ export function FiltersSheet({
         </div>
       </Section>
 
-      <Section title="Disponibilité">
-        <div className="flex flex-wrap gap-2">
-          {AVAILABILITY_OPTIONS.map((o) => (
-            <Chip key={o.value} selected={draft.availability === o.value} onClick={() => set("availability", draft.availability === o.value ? null : o.value)}>
-              {o.label}
-            </Chip>
-          ))}
-        </div>
-      </Section>
-
-      <Section title="Note">
-        <div className="flex flex-wrap gap-2">
-          {RATING_OPTIONS.map((r) => (
-            <Chip key={r} selected={draft.ratingMin === r} onClick={() => set("ratingMin", draft.ratingMin === r ? null : r)}>
-              <Icon name="star" size={15} className="text-star" />
-              {String(r).replace(".", ",")}+
-            </Chip>
-          ))}
-        </div>
-      </Section>
     </Sheet>
   );
 }

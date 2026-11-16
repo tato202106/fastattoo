@@ -6,6 +6,7 @@ import { parseCountry, type CountryCode } from "../countries";
 import type { BodyZone, ImageAsset, OpeningHours, PortfolioItem, Slot, StyleSlug } from "../types";
 import { readOpeningHours } from "./availability";
 import { geocode } from "./geocode";
+import { resumesOnActivity, type PauseReason } from "./inactivity";
 import { artistIdFor, autoPublishDecision, subscriptionEnded, toArtistRow, type ArtistTitle, type ProfileInput, type ProfileStatus } from "./profile";
 
 /**
@@ -106,6 +107,14 @@ export function ensureAccountTables(): Promise<void> {
       }
       // Comptes créés avant l'ouverture à la Belgique : France par défaut.
       await sql`ALTER TABLE artist_accounts ADD COLUMN IF NOT EXISTS country text NOT NULL DEFAULT 'FR'`;
+      // Suivi d'activité (tatoueurs qui ont arrêté, voir lib/accounts/inactivity.ts).
+      await sql`ALTER TABLE artist_accounts ADD COLUMN IF NOT EXISTS last_active_at timestamptz`;
+      await sql`ALTER TABLE artist_accounts ADD COLUMN IF NOT EXISTS inactivity_notice_at timestamptz`;
+      await sql`ALTER TABLE artist_accounts ADD COLUMN IF NOT EXISTS paused_reason text`;
+      // Comptes existants : dernière connexion connue (création de la session la plus récente).
+      await sql`UPDATE artist_accounts a SET last_active_at = s.last_login
+        FROM (SELECT account_id, max(created_at) AS last_login FROM artist_sessions GROUP BY account_id) s
+        WHERE a.id = s.account_id AND a.last_active_at IS NULL`;
     })();
     ready.catch(() => {
       ready = null;
@@ -141,6 +150,12 @@ export interface Account {
   /** Horaires d'ouverture (null tant qu'ils ne sont pas renseignés). */
   openingHours: OpeningHours | null;
   createdAt: string;
+  lastActiveAt: string | null;
+  inactivityNoticeAt: string | null;
+  pausedReason: PauseReason | null;
+  /** Avis clients du profil en ligne (liste admin uniquement). */
+  rating?: number;
+  reviewCount?: number;
 }
 
 const iso = (v: unknown) => (v instanceof Date ? v.toISOString() : typeof v === "string" ? v : null);
@@ -172,6 +187,9 @@ function toAccount(r: Row): Account {
     subscriptionStatus: r.subscription_status ?? null,
     openingHours: readOpeningHours(r.opening_hours),
     createdAt: iso(r.created_at) ?? "",
+    lastActiveAt: iso(r.last_active_at),
+    inactivityNoticeAt: iso(r.inactivity_notice_at),
+    pausedReason: r.paused_reason === "owner" || r.paused_reason === "inactivity" ? r.paused_reason : null,
   };
 }
 
@@ -414,9 +432,13 @@ export async function autoPublish(accountId: number): Promise<AutoPublishResult>
 
 export async function listAccounts(): Promise<Account[]> {
   await ensureAccountTables();
-  const rows = (await connect()`SELECT * FROM artist_accounts
-    ORDER BY CASE profile_status WHEN 'submitted' THEN 0 WHEN 'published' THEN 1 ELSE 2 END, submitted_at DESC NULLS LAST, id DESC`) as Row[];
-  return rows.map(toAccount);
+  const rows = (await connect()`SELECT a.*, ar.rating AS artist_rating, ar.review_count AS artist_review_count
+    FROM artist_accounts a LEFT JOIN artists ar ON ar.id = 'acc-' || a.id
+    ORDER BY CASE a.profile_status WHEN 'submitted' THEN 0 WHEN 'published' THEN 1 ELSE 2 END, a.submitted_at DESC NULLS LAST, a.id DESC`) as Row[];
+  return rows.map((r) => ({
+    ...toAccount(r),
+    ...(r.artist_rating != null ? { rating: Number(r.artist_rating), reviewCount: Number(r.artist_review_count ?? 0) } : {}),
+  }));
 }
 
 /** Copie les photos du compte dans `portfolio_items` (table lue par le site). */
@@ -464,7 +486,7 @@ export async function publishAccount(id: number): Promise<string> {
   const account = await getAccount(id);
   if (!account) throw new Error("Compte introuvable");
   const slug = await upsertArtist(account);
-  await connect()`UPDATE artist_accounts SET profile_status = 'published', published_at = now(), artist_id = ${`acc-${id}`}, updated_at = now() WHERE id = ${id}`;
+  await connect()`UPDATE artist_accounts SET profile_status = 'published', published_at = now(), artist_id = ${`acc-${id}`}, paused_reason = NULL, updated_at = now() WHERE id = ${id}`;
   return slug;
 }
 
@@ -479,7 +501,68 @@ export async function unpublishAccount(id: number, status: "hidden" | "draft" = 
   await sql`DELETE FROM portfolio_items WHERE artist_id = ${artistIdFor(id)}`;
   await sql`DELETE FROM slots WHERE artist_id = ${artistIdFor(id)}`;
   await sql`DELETE FROM artists WHERE id = ${artistIdFor(id)}`;
-  await sql`UPDATE artist_accounts SET profile_status = ${status}, artist_id = NULL, updated_at = now() WHERE id = ${id}`;
+  await sql`UPDATE artist_accounts SET profile_status = ${status}, artist_id = NULL, paused_reason = NULL, updated_at = now() WHERE id = ${id}`;
+}
+
+/* ---------- Pause et activité ---------- */
+
+/**
+ * Met le profil en pause : il quitte la carte et la recherche, les photos
+ * restent dans le compte. L'abonnement n'est pas touché.
+ */
+export async function pauseAccount(id: number, reason: PauseReason): Promise<Account | null> {
+  await ensureAccountTables();
+  const sql = connect();
+  await sql`DELETE FROM portfolio_items WHERE artist_id = ${artistIdFor(id)}`;
+  await sql`DELETE FROM slots WHERE artist_id = ${artistIdFor(id)}`;
+  await sql`DELETE FROM artists WHERE id = ${artistIdFor(id)}`;
+  await sql`UPDATE artist_accounts SET profile_status = 'paused', paused_reason = ${reason}, artist_id = NULL, updated_at = now() WHERE id = ${id}`;
+  return getAccount(id);
+}
+
+/** Sort de la pause : le profil revient en ligne si l'abonnement est actif. */
+export async function resumeAccount(id: number): Promise<Account | null> {
+  await ensureAccountTables();
+  await connect()`UPDATE artist_accounts SET profile_status = 'draft', paused_reason = NULL, inactivity_notice_at = NULL, updated_at = now()
+    WHERE id = ${id} AND profile_status = 'paused'`;
+  return (await autoPublish(id)).account;
+}
+
+/**
+ * Le tatoueur est actif (connexion à son espace, lien « Je suis toujours
+ * actif ») : on le note au plus une fois par heure.
+ */
+export async function markActive(id: number): Promise<void> {
+  await ensureAccountTables();
+  await connect()`UPDATE artist_accounts SET last_active_at = now()
+    WHERE id = ${id} AND (last_active_at IS NULL OR last_active_at < now() - interval '1 hour')`;
+}
+
+/**
+ * À chaque visite de l'espace tatoueur : note l'activité et remet en ligne un
+ * profil mis en pause faute d'activité. N'empêche jamais l'affichage de l'espace.
+ */
+export async function recordActivity(account: Account): Promise<Account> {
+  try {
+    await markActive(account.id);
+    if (resumesOnActivity(account)) return (await resumeAccount(account.id)) ?? account;
+  } catch (e) {
+    console.error(`[compte] suivi d'activité du compte ${account.id} impossible :`, e);
+  }
+  return account;
+}
+
+/** Comptes en ligne (candidats au contrôle d'inactivité quotidien). */
+export async function listPublishedAccounts(): Promise<Account[]> {
+  await ensureAccountTables();
+  const rows = (await connect()`SELECT * FROM artist_accounts WHERE profile_status = 'published' ORDER BY id`) as Row[];
+  return rows.map(toAccount);
+}
+
+/** Note l'envoi de l'e-mail « Tu tatoues toujours ? ». */
+export async function markInactivityNotice(id: number): Promise<void> {
+  await ensureAccountTables();
+  await connect()`UPDATE artist_accounts SET inactivity_notice_at = now() WHERE id = ${id}`;
 }
 
 /* ---------- Photos du portfolio ---------- */

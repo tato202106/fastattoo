@@ -4,7 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { Map as MaplibreMap, Marker, setWorkerUrl, type LngLatBoundsLike, type StyleSpecification } from "maplibre-gl";
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from "@/lib/cities";
-import { isDemoArtist, isNewArtist, priceFromLabel } from "@/lib/showcase";
+import { isDemoArtist, isNewArtist, mapPinLabel } from "@/lib/showcase";
 import { MAPLIBRE_WORKER_URL } from "@/lib/maplibre-version";
 import type { ArtistCard, BBox, LatLng } from "@/lib/types";
 
@@ -36,12 +36,6 @@ function defaultStyle(dark: boolean): StyleSpecification {
       { id: "basemap", type: "raster", source: "basemap" },
     ],
   };
-}
-
-function markerLabel(a: ArtistCard) {
-  if (isDemoArtist(a)) return `${a.priceFrom} €`;
-  if (isNewArtist(a)) return a.priceFrom > 0 ? `${a.priceFrom} €` : "Nouveau";
-  return `★ ${a.rating.toFixed(1).replace(".", ",")}`;
 }
 
 function styleMarker(el: HTMLElement, selected: boolean) {
@@ -192,10 +186,10 @@ export default function ArtistMap({
       const el = document.createElement("button");
       el.type = "button";
       el.className = "ft-marker";
-      el.setAttribute("aria-label", isDemoArtist(a) ? `${a.name}, profil exemple` : isNewArtist(a) ? `${a.name}, nouveau, ${priceFromLabel(a.priceFrom)}` : `${a.name}, note ${a.rating.toFixed(1)}`);
+      el.setAttribute("aria-label", isDemoArtist(a) ? `${a.name}, profil exemple` : isNewArtist(a) ? `${a.name}, nouveau, pas encore d'avis` : `${a.name}, note ${a.rating.toFixed(1)}`);
       el.style.cssText = "padding:6px;background:none;border:0;";
       const pill = document.createElement("span");
-      pill.textContent = markerLabel(a);
+      pill.textContent = mapPinLabel(a);
       pill.style.cssText =
         "display:block;padding:5px 9px;border-radius:999px;font:600 13px/1 system-ui,sans-serif;box-shadow:0 2px 8px rgb(0 0 0/.25);border:1px solid var(--border);transition:transform 150ms ease,background 150ms;white-space:nowrap;";
       el.appendChild(pill);
