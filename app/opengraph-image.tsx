@@ -17,14 +17,14 @@ export default function OpengraphImage() {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "72px 80px",
-          background: "#151413",
+          background: "#0b0b0b",
           color: "#ffffff",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
           <svg width="96" height="96" viewBox="0 0 100 100">
             <rect width="100" height="100" rx="28" fill="#ffffff" />
-            <path d={LOGO_MARK_PATH} fillRule="evenodd" transform="translate(50 50) scale(0.78) translate(-50 -50)" fill="#151413" />
+            <path d={LOGO_MARK_PATH} fillRule="evenodd" transform="translate(50 50) scale(0.78) translate(-50 -50)" fill="#0b0b0b" />
           </svg>
           <span style={{ fontSize: 64, fontWeight: 700, letterSpacing: -1 }}>fastattoo</span>
         </div>
@@ -33,7 +33,7 @@ export default function OpengraphImage() {
           <span style={{ fontSize: 36, color: "#cfcac4" }}>Portfolios, styles et demandes de projet en quelques secondes.</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 16, height: 16, borderRadius: 8, background: "#d61f26" }} />
+          <div style={{ width: 16, height: 16, borderRadius: 8, background: "#e10600" }} />
           <span style={{ fontSize: 30, color: "#cfcac4" }}>France · Belgique</span>
         </div>
       </div>

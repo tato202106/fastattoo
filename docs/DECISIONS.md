@@ -231,3 +231,11 @@ Limites connues :
 - **Profil public** : section « Flashs disponibles » sous le portfolio (disponibles d'abord, réservés grisés). Lus à l'ouverture par `/api/flashs?artiste=acc-N` (table `account_flashes`, profil en ligne seulement) pour que les statuts soient toujours à jour malgré le cache de la page.
 - **« Je le veux »** : ouvre la demande de projet (`/tatoueurs/<slug>/demande?flash=<id>`) pré-remplie : texte « Je voudrais ton flash … », style, taille, prix fixe comme budget (« 120 € (prix fixe) ») et le dessin en inspiration. Un flash réservé ou déjà tatoué ne peut plus être demandé.
 - **Profils d'exemple** : 4 flashs d'exemple générés (dessins de démo), pour montrer la fonctionnalité.
+
+## Style « Blackletter Club » (novembre 2026)
+
+- **Choix** : noir et blanc pur, lettres gothiques pour les titres et le logo, texte en police « machine à écrire », une seule touche de rouge (le carré du logo). Planche des 4 pistes étudiées : https://claude.ai/artifact/UVywZhiP3taDXbXTGJf5nx
+- **Polices** (chargées par `next/font/google` dans `app/layout.tsx`, servies par le site) : UnifrakturMaguntia pour `font-display` (une seule graisse : le gras simulé est désactivé dans `globals.css`), JetBrains Mono pour le texte.
+- **Couleurs** (`app/globals.css`) : fond blanc, encre `#0b0b0b`, gris `#5c5c5c` et `#f2f2f2`, rouge `#e10600` réservé au logo (`bg-brand`). Les boutons principaux sont noirs, les étoiles des notes aussi.
+- **Formes** : angles nets (rayons des classes `rounded-md` à `rounded-3xl` mis à 0 ; pastilles et avatars restent ronds), cartes entourées d'un cadre noir au lieu d'une ombre douce.
+- **Logo** : « Fastattoo » en gothique + carré rouge (`components/layout/Logo.tsx`). Les icônes de l'appli et le favicon gardent pour l'instant l'ancien « F ».

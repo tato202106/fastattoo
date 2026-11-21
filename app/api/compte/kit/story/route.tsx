@@ -9,8 +9,8 @@ export const dynamic = "force-dynamic";
 
 const W = 1080;
 const H = 1920;
-const INK = "#151413";
-const RED = "#d61f26";
+const INK = "#0b0b0b";
+const RED = "#e10600";
 
 /**
  * Visuel de story Instagram/TikTok (1080 × 1920) du tatoueur connecté :
