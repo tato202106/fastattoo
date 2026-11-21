@@ -1,10 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
+import { JetBrains_Mono, UnifrakturMaguntia } from "next/font/google";
 import { AppRuntime } from "@/components/layout/AppRuntime";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { DesktopNav } from "@/components/layout/DesktopNav";
 import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
+
+/** Style « Blackletter Club » : lettres gothiques pour les titres, police machine à écrire pour le texte. */
+const blackletter = UnifrakturMaguntia({ weight: "400", subsets: ["latin"], display: "swap", variable: "--font-brand-blackletter" });
+const mono = JetBrains_Mono({ subsets: ["latin", "latin-ext"], display: "swap", variable: "--font-brand-mono" });
 
 export const metadata: Metadata = {
   // Adresse de base des images d'aperçu (opengraph-image) et des liens partagés.
@@ -34,7 +39,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={`${blackletter.variable} ${mono.variable}`}>
       <body>
         <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[70] focus:rounded-full focus:bg-fg focus:px-4 focus:py-2 focus:text-bg">
           Aller au contenu
